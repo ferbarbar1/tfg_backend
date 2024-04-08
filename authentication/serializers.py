@@ -1,0 +1,55 @@
+from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from .models import CustomUser, Owner, Client, Worker
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "username", "password", "first_name", "last_name", "email"]
+
+    def create(self, validated_data):
+        user = get_user_model().objects.create_user(**validated_data)
+        return user
+
+
+class OwnerSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer()
+
+    class Meta:
+        model = Owner
+        fields = ["id", "user"]
+
+    def create(self, validated_data):
+        user_data = validated_data.pop("user")
+        user = CustomUser.objects.create_user(**user_data)
+        owner = Owner.objects.create(user=user, **validated_data)
+        return owner
+
+
+class WorkerSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer()
+
+    class Meta:
+        model = Worker
+        fields = ["id", "user", "salary", "specialty"]
+
+    def create(self, validated_data):
+        user_data = validated_data.pop("user")
+        user = CustomUser.objects.create_user(**user_data)
+        worker = Worker.objects.create(user=user, **validated_data)
+        return worker
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer()
+
+    class Meta:
+        model = Client
+        fields = ["id", "user", "subscription_plan"]
+
+    def create(self, validated_data):
+        user_data = validated_data.pop("user")
+        user = CustomUser.objects.create_user(**user_data)
+        client = Client.objects.create(user=user, **validated_data)
+        return client

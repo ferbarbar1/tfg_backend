@@ -46,6 +46,8 @@ def register(request, user_type):
         serializer_class = ClientSerializer
     elif user_type == "worker":
         serializer_class = WorkerSerializer
+    elif user_type == "owner":
+        serializer_class = OwnerSerializer
     else:
         return Response(
             {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST

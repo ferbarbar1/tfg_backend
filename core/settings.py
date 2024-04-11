@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default="your secret key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = "RENDER" not in os.environ
 
-ALLOWED_HOSTS = ["http://localhost:5173/"]
+ALLOWED_HOSTS = ["http://localhost:5173/", "localhost", "127.0.0.1"]
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "coreapi",
     "authentication",
     "owner",
     "workers",
@@ -148,3 +149,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Specify the custom user model
 AUTH_USER_MODEL = "authentication.CustomUser"
+
+
+# Needed to document the API
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+}

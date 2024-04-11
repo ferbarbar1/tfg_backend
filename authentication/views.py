@@ -3,8 +3,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
-from .serializers import ClientSerializer, WorkerSerializer
-from .models import CustomUser, Client, Worker
+from .serializers import OwnerSerializer, WorkerSerializer, ClientSerializer
+from .models import CustomUser, Owner, Client, Worker
 
 
 # Create your views here.
@@ -66,7 +66,7 @@ def register(request, user_type):
 
 @api_view(["POST"])
 def login(request, user_type):
-    if user_type not in ["client", "worker"]:
+    if user_type not in ["client", "worker", "owner"]:
         return Response(
             {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -84,6 +84,9 @@ def login(request, user_type):
     elif user_type == "worker":
         worker = get_object_or_404(Worker, user=user)
         serializer = WorkerSerializer(instance=worker)
+    elif user_type == "owner":
+        owner = get_object_or_404(Owner, user=user)
+        serializer = OwnerSerializer(instance=owner)
 
     return Response(
         {"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK

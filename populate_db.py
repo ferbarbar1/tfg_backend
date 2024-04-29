@@ -90,37 +90,53 @@ def run_migrations():
 
 def create_users():
     # Crear propietario
-    owner_user = CustomUser.objects.create_user(
-        "owner", "owner@example.com", "ownerpassword"
-    )
-    Owner.objects.create(user=owner_user)
+    if not CustomUser.objects.filter(email="owner@example.com").exists():
+        owner_user = CustomUser.objects.create_user(
+            "owner",
+            "owner@example.com",
+            "ownerpassword",
+            first_name="Owner",
+            last_name="User",
+        )
+        Owner.objects.create(user=owner_user)
 
     # Crear superusuario
-    super_user = CustomUser.objects.create_superuser(
-        "superuser", "superuser@example.com", "superuser"
-    )
+    if not CustomUser.objects.filter(email="superuser@example.com").exists():
+        super_user = CustomUser.objects.create_superuser(
+            "superuser",
+            "superuser@example.com",
+            "superuser",
+            first_name="Super",
+            last_name="User",
+        )
 
     # Crear varios trabajadores y clientes
     for i in range(5):
-        worker_user = CustomUser.objects.create_user(
-            f"worker{i}",
-            f"worker{i}@example.com",
-            "workerpassword",
-        )
-        Worker.objects.create(
-            user=worker_user,
-            salary=5000.00,
-            specialty="Especialidad",
-        )
-        client_user = CustomUser.objects.create_user(
-            f"client{i}",
-            f"client{i}@example.com",
-            "clientpassword",
-        )
-        Client.objects.create(
-            user=client_user,
-            subscription_plan="FREE",
-        )
+        if not CustomUser.objects.filter(email=f"worker{i}@example.com").exists():
+            worker_user = CustomUser.objects.create_user(
+                f"worker{i}",
+                f"worker{i}@example.com",
+                "workerpassword",
+                first_name=f"Worker{i}",
+                last_name="User",
+            )
+            Worker.objects.create(
+                user=worker_user,
+                salary=5000.00,
+                specialty="Especialidad",
+            )
+        if not CustomUser.objects.filter(email=f"client{i}@example.com").exists():
+            client_user = CustomUser.objects.create_user(
+                f"client{i}",
+                f"client{i}@example.com",
+                "clientpassword",
+                first_name=f"Client{i}",
+                last_name="User",
+            )
+            Client.objects.create(
+                user=client_user,
+                subscription_plan="FREE",
+            )
 
     print("Usuarios creados con éxito")
 
@@ -210,6 +226,7 @@ def create_ratings():
             service=service,
             rate=i + 3,  # Puntuaciones de 3 y 4
             opinion=f"Opinión {i+1}",
+            date=datetime.now(),  # Añade la fecha y hora actual
         )
 
     print("Calificaciones creadas con éxito")

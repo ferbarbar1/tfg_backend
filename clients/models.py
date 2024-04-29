@@ -17,7 +17,7 @@ class Rating(models.Model):
     )
     rate = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     opinion = models.CharField(max_length=255)
-    date = models.DateField(auto_now_add=True)
+    date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("client", "worker", "service")

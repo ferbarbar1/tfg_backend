@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
@@ -93,6 +94,25 @@ def login(request, user_type):
     return Response(
         {"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    user = request.user
+
+    if hasattr(user, "owner"):
+        serializer = OwnerSerializer(instance=user.owner)
+    elif hasattr(user, "worker"):
+        serializer = WorkerSerializer(instance=user.worker)
+    elif hasattr(user, "client"):
+        serializer = ClientSerializer(instance=user.client)
+    else:
+        return Response(
+            {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 """

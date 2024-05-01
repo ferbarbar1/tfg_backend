@@ -8,6 +8,7 @@ import django
 django.setup()
 
 from django.core.management import call_command
+from django.apps import apps
 from authentication.models import CustomUser, Owner, Client, Worker
 from workers.models import Schedule
 from workers.models import Appointment
@@ -16,10 +17,13 @@ from clients.models import Rating
 import random
 
 
-def run_migrations():
-    # Revierte todas las migraciones a cero
-    call_command("migrate", None, "zero")
+def delete_all_data():
+    for model in apps.get_models():
+        model.objects.all().delete()
+    print("Todos los datos han sido eliminados")
 
+
+def run_migrations():
     # Ejecuta 'makemigrations' para todas las aplicaciones
     call_command("makemigrations")
 
@@ -172,6 +176,8 @@ def create_ratings():
 
 
 def populate_db():
+    print("Eliminando todos los datos existentes... Por favor espera")
+    delete_all_data()
     print("Ejecutando migraciones... Por favor espera")
     run_migrations()
     print("Poblando la base de datos... Por favor espera")

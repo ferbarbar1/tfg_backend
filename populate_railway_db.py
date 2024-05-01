@@ -1,6 +1,4 @@
 import os
-import shutil
-import sqlite3
 from datetime import time, date, datetime, timedelta
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
@@ -10,6 +8,7 @@ import django
 django.setup()
 
 from django.core.management import call_command
+from django.apps import apps
 from authentication.models import CustomUser, Owner, Client, Worker
 from workers.models import Schedule
 from workers.models import Appointment
@@ -18,66 +17,10 @@ from clients.models import Rating
 import random
 
 
-def remove_pycache_and_clean_migrations(root_path, modules):
-    for module in modules:
-        # Ruta del módulo
-        module_path = os.path.join(root_path, module)
-        print(f"Revisando módulo: {module}")
-        pycache_found = False
-        migrations_cleaned = False
-
-        for root, dirs, files in os.walk(module_path):
-            if "__pycache__" in dirs:
-                pycache_path = os.path.join(root, "__pycache__")
-                shutil.rmtree(pycache_path)
-                print(f"Eliminado: {pycache_path}")
-                pycache_found = True
-
-            if "migrations" in root:
-                for file in files:
-                    if file.endswith(".py") and file != "__init__.py":
-                        file_path = os.path.join(root, file)
-                        os.remove(file_path)
-                        print(f"Eliminado: {file_path}")
-                        migrations_cleaned = True
-
-        if not pycache_found:
-            print(f"No se encontró __pycache__ para eliminar en el módulo {module}.")
-        if not migrations_cleaned:
-            print(
-                f"No se encontraron archivos en 'migrations' para eliminar en el módulo {module}."
-            )
-
-
-def clean_db():
-    try:
-        conn = sqlite3.connect("db.sqlite3")
-        cur = conn.cursor()
-
-        cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence'"
-        )
-        tables = cur.fetchall()
-        print(f"Se encontraron {len(tables)} tablas.")
-
-        for table in tables:
-            print(f"Eliminando tabla: {table[0]}...")
-            cur.execute(f"DROP TABLE {table[0]}")
-            conn.commit()
-
-        print("Todas las tablas han sido eliminadas.")
-
-        cur.execute("DELETE FROM sqlite_sequence")
-        conn.commit()
-
-        # Reiniciar los IDs de las tablas a 1
-        cur.execute("DELETE FROM sqlite_sequence")
-        conn.commit()
-
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print(f"Ocurrió un error: {e}")
+def delete_all_data():
+    for model in apps.get_models():
+        model.objects.all().delete()
+    print("Todos los datos han sido eliminados")
 
 
 def run_migrations():
@@ -233,14 +176,8 @@ def create_ratings():
 
 
 def populate_db():
-    print("Limpiando archivos de migraciones y __pycache__... Por favor espera")
-    # Ruta de la carpeta actual donde se encuentra el script
-    root_path = "."
-    # Lista de módulos a limpiar
-    modules = ["authentication", "clients", "owner", "workers"]
-    remove_pycache_and_clean_migrations(root_path, modules)
-    print("Limpiando la base de datos... Por favor espera")
-    clean_db()
+    print("Eliminando todos los datos existentes... Por favor espera")
+    delete_all_data()
     print("Ejecutando migraciones... Por favor espera")
     run_migrations()
     print("Poblando la base de datos... Por favor espera")
@@ -249,7 +186,7 @@ def populate_db():
     create_appointments()
     create_services()
     create_ratings()
-    print("Población completa!")
+    print("Población completada con éxito")
 
 
 if __name__ == "__main__":

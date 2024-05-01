@@ -56,8 +56,8 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-**/migrations/*.py
-**/migrations/*.pyc
+#**/migrations/*.py
+#**/migrations/*.pyc
 *.log
 *.pot
 *.pyc

@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 
 
 class CustomUser(AbstractUser):
-    pass
+    email = models.EmailField(unique=True)
 
 
 class Owner(models.Model):

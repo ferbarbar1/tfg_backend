@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
-from .serializers import ClientSerializer, WorkerSerializer
-from .models import CustomUser, Client, Worker
+from .serializers import OwnerSerializer, WorkerSerializer, ClientSerializer
+from .models import CustomUser, Owner, Client, Worker
 
 
 # Create your views here.
@@ -46,6 +47,8 @@ def register(request, user_type):
         serializer_class = ClientSerializer
     elif user_type == "worker":
         serializer_class = WorkerSerializer
+    elif user_type == "owner":
+        serializer_class = OwnerSerializer
     else:
         return Response(
             {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST
@@ -66,7 +69,7 @@ def register(request, user_type):
 
 @api_view(["POST"])
 def login(request, user_type):
-    if user_type not in ["client", "worker"]:
+    if user_type not in ["client", "worker", "owner"]:
         return Response(
             {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -84,10 +87,32 @@ def login(request, user_type):
     elif user_type == "worker":
         worker = get_object_or_404(Worker, user=user)
         serializer = WorkerSerializer(instance=worker)
+    elif user_type == "owner":
+        owner = get_object_or_404(Owner, user=user)
+        serializer = OwnerSerializer(instance=owner)
 
     return Response(
         {"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    user = request.user
+
+    if hasattr(user, "owner"):
+        serializer = OwnerSerializer(instance=user.owner)
+    elif hasattr(user, "worker"):
+        serializer = WorkerSerializer(instance=user.worker)
+    elif hasattr(user, "client"):
+        serializer = ClientSerializer(instance=user.client)
+    else:
+        return Response(
+            {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 """

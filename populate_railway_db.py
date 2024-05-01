@@ -18,7 +18,7 @@ import random
 
 def run_migrations():
     # Revierte todas las migraciones a cero
-    call_command("migrate", "zero")
+    call_command("migrate", zero=True)
 
     # Ejecuta 'makemigrations' para todas las aplicaciones
     call_command("makemigrations")

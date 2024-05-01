@@ -33,7 +33,7 @@ ALLOWED_HOSTS = [
     "http://localhost:5173/",
     "localhost",
     "127.0.0.1",
-    "https://tfgbackend-production.up.railway.app/",
+    "tfgbackend-production.up.railway.app",
 ]
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")

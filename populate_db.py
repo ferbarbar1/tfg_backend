@@ -2,6 +2,7 @@ import os
 import shutil
 import sqlite3
 from datetime import time, date, datetime, timedelta
+from django.core.files import File
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 
@@ -99,6 +100,8 @@ def create_users():
             last_name="User",
         )
         Owner.objects.create(user=owner_user)
+        owner_user.get_role = "owner"
+        owner_user.save()
 
     # Crear superusuario
     if not CustomUser.objects.filter(email="superuser@example.com").exists():
@@ -109,6 +112,8 @@ def create_users():
             first_name="Super",
             last_name="User",
         )
+        super_user.get_role = "superuser"
+        super_user.save()
 
     # Crear varios trabajadores y clientes
     for i in range(5):
@@ -125,6 +130,9 @@ def create_users():
                 salary=5000.00,
                 specialty="Especialidad",
             )
+            worker_user.get_role = "worker"
+            worker_user.save()
+
         if not CustomUser.objects.filter(email=f"client{i}@example.com").exists():
             client_user = CustomUser.objects.create_user(
                 f"client{i}",
@@ -137,6 +145,8 @@ def create_users():
                 user=client_user,
                 subscription_plan="FREE",
             )
+            client_user.get_role = "client"
+            client_user.save()
 
     print("Usuarios creados con éxito")
 
@@ -177,15 +187,26 @@ def create_appointments():
     clients = Client.objects.all()
     schedules = Schedule.objects.filter(available=True)
 
-    for client in clients:
+    for i, client in enumerate(clients):
         if schedules:
             chosen_schedule = schedules.first()
-            Appointment.objects.create(
-                client=client,
-                worker=chosen_schedule.worker,
-                schedule=chosen_schedule,
-                description="Cita de ejemplo",
-            )
+            if i % 2 == 0:  # Para los clientes con índice par, crea una cita virtual
+                Appointment.objects.create(
+                    client=client,
+                    worker=chosen_schedule.worker,
+                    schedule=chosen_schedule,
+                    description="Cita de ejemplo",
+                    modality="VIRTUAL",  # Añade la modalidad
+                    meeting_link="https://zoom.us/j/1234567890",  # Añade el enlace de la reunión
+                )
+            else:  # Para los clientes con índice impar, crea una cita presencial
+                Appointment.objects.create(
+                    client=client,
+                    worker=chosen_schedule.worker,
+                    schedule=chosen_schedule,
+                    description="Cita de ejemplo",
+                    modality="IN_PERSON",  # Añade la modalidad
+                )
             chosen_schedule.available = False
             chosen_schedule.save()
 
@@ -194,17 +215,42 @@ def create_appointments():
 
 def create_services():
     workers = list(Worker.objects.all())
-    service = Service.objects.create(
-        name="Servicio de ejemplo",
-        description="Descripción de ejemplo",
-        price=100.00,
-    )
-    num_workers = random.randint(1, 2)  # Número aleatorio de trabajadores: 1 o 2
-    random_workers = random.sample(
-        workers, num_workers
-    )  # Selecciona especialistas aleatorios
-    for worker in random_workers:
-        service.workers.add(worker)
+    services = [
+        {
+            "name": "Servicio de ejemplo 1",
+            "description": "Descripción de ejemplo 1",
+            "price": 100.00,
+            "image": "servicio1.png",
+        },
+        {
+            "name": "Servicio de ejemplo 2",
+            "description": "Descripción de ejemplo 2",
+            "price": 200.00,
+            "image": "servicio2.jpg",
+        },
+        {
+            "name": "Servicio de ejemplo 3",
+            "description": "Descripción de ejemplo 3",
+            "price": 300.00,
+            "image": "servicio3.jpg",
+        },
+    ]
+
+    for service in services:
+        with open(f"media/images/{service['image']}", "rb") as img_file:
+            service = Service.objects.create(
+                name=service["name"],
+                description=service["description"],
+                price=service["price"],
+                image=File(img_file, name=service["image"]),
+            )
+        num_workers = random.randint(1, 2)  # Número aleatorio de trabajadores: 1 o 2
+        random_workers = random.sample(
+            workers, num_workers
+        )  # Selecciona especialistas aleatorios
+        for worker in random_workers:
+            service.workers.add(worker)
+
     print("Servicios creados con éxito")
 
 

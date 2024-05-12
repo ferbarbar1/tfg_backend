@@ -3,10 +3,13 @@ from workers.models import Appointment
 from .models import Service
 from workers.serializers import ScheduleSerializer
 from workers.models import Schedule
+from authentication.serializers import WorkerSerializer, ClientSerializer
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    schedule = ScheduleSerializer()  # Serialización anidada
+    schedule = ScheduleSerializer()
+    worker = WorkerSerializer()
+    client = ClientSerializer()
 
     class Meta:
         model = Appointment
@@ -37,6 +40,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
+    workers = WorkerSerializer(many=True, read_only=True)
+
     class Meta:
         model = Service
         fields = "__all__"

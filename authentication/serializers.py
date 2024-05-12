@@ -4,13 +4,26 @@ from .models import CustomUser, Owner, Client, Worker
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "password", "first_name", "last_name", "email"]
+        fields = [
+            "id",
+            "username",
+            "password",
+            "first_name",
+            "last_name",
+            "email",
+            "role",
+        ]
 
     def create(self, validated_data):
         user = get_user_model().objects.create_user(**validated_data)
         return user
+
+    def get_role(self, obj):
+        return obj.get_role()
 
 
 class OwnerSerializer(serializers.ModelSerializer):

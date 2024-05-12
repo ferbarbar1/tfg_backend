@@ -9,38 +9,6 @@ from .models import CustomUser, Owner, Client, Worker
 
 
 # Create your views here.
-"""
-@api_view(["POST"])
-def register(request, user_type):
-    if user_type == "client":
-        serializer_class = ClientSerializer
-    elif user_type == "worker":
-        serializer_class = WorkerSerializer
-    else:
-        return Response(
-            {"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    serializer = serializer_class(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-
-        user = serializer_class.Meta.model.objects.get(
-            username=serializer.data["username"]
-        )
-        user.set_password(serializer.data["password"])
-        user.save()
-
-        token = Token.objects.create(user=user)
-        return Response(
-            {"token": token.key, "user": serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-"""
-
-
 @api_view(["POST"])
 def register(request, user_type):
     if user_type == "client":
@@ -100,12 +68,13 @@ def login(request, user_type):
 @permission_classes([IsAuthenticated])
 def profile(request):
     user = request.user
+    role = user.get_role()
 
-    if hasattr(user, "owner"):
+    if role == "owner":
         serializer = OwnerSerializer(instance=user.owner)
-    elif hasattr(user, "worker"):
+    elif role == "worker":
         serializer = WorkerSerializer(instance=user.worker)
-    elif hasattr(user, "client"):
+    elif role == "client":
         serializer = ClientSerializer(instance=user.client)
     else:
         return Response(
@@ -113,21 +82,3 @@ def profile(request):
         )
 
     return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-"""
-from rest_framework.decorators import (
-    api_view,
-    authentication_classes,
-    permission_classes,
-)
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
-
-@api_view(["POST"])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def profile(request):
-    serializer = UserSerializer(instance=request.user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-"""

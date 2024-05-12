@@ -6,6 +6,16 @@ from django.contrib.contenttypes.models import ContentType
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
 
+    def get_role(self):
+        if hasattr(self, "owner"):
+            return "owner"
+        elif hasattr(self, "worker"):
+            return "worker"
+        elif hasattr(self, "client"):
+            return "client"
+        else:
+            return None
+
 
 class Owner(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)

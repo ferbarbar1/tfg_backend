@@ -24,6 +24,11 @@ class Appointment(models.Model):
         ("COMPLETED", "Completed"),
     ]
 
+    MODALITY_CHOICES = [
+        ("VIRTUAL", "Virtual"),
+        ("IN_PERSON", "In person"),
+    ]
+
     client = models.ForeignKey(
         Client, on_delete=models.CASCADE, related_name="client_appointments"
     )
@@ -35,3 +40,7 @@ class Appointment(models.Model):
     )
     description = models.TextField(blank=True, max_length=255)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
+    modality = models.CharField(
+        max_length=10, choices=MODALITY_CHOICES, default="IN_PERSON"
+    )
+    meeting_link = models.URLField(blank=True, null=True)

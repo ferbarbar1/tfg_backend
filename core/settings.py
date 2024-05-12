@@ -30,7 +30,6 @@ SECRET_KEY = os.environ.get("SECRET_KEY", default="your secret key")
 DEBUG = "RAILWAY" not in os.environ
 
 ALLOWED_HOSTS = [
-    "http://localhost:5173/",
     "localhost",
     "127.0.0.1",
     "tfgbackend-production.up.railway.app",
@@ -52,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "django_filters",
     "corsheaders",
     "coreapi",
     "authentication",
@@ -61,10 +61,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -74,7 +74,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://tfgfrontend-production.up.railway.app/",
+    "https://tfgfrontend-production.up.railway.app",
 ]
 
 CORS_ALLOW_HEADERS = default_headers
@@ -171,4 +171,17 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
 }
+
+STRIPE_PUBLIC_KEY = "pk_test_51PFdYTGzZooPGUyPyarTnl6RMGFS0Zkll6iKQcpYRK0sICx2lokA4BEXIoxm1j4n1OmvkOP48mYaTaGBpsPfzs5Y0012QYjWvu"
+STRIPE_SECRET_KEY = "sk_test_51PFdYTGzZooPGUyP5FUjmDph7DI13dUu1hJT26Rk1oLr0huGdmX7OD8vLTVmc76zYY9Cyqx6JkFvAolRnnEc08G3003T9AA0zb"
+
+SITE_URL = "http://localhost:5173"
+
+TWILIO_ACCOUNT_SID = "AC4726bad3fa8bf39c1b6c26cd12b49899"
+TWILIO_AUTH_TOKEN = "1b24006add1bbf77fff4e4a6e5cde9ac"
+
+
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"

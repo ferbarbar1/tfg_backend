@@ -1,3 +1,5 @@
+from twilio.rest import Client
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,87 +7,27 @@ from workers.models import Appointment, Schedule
 from .serializers import AppointmentSerializer
 from django.db.models import Sum, F, ExpressionWrapper, fields
 from datetime import timedelta
+from .permissions import IsOwner
 
-"""
-class CreateAppointmentView(APIView):
-    def post(self, request, format=None):
-        serializer = AppointmentSerializer(data=request.data)
-        if serializer.is_valid():
-            # Obtén el horario y el trabajador desde los datos de la cita
-            schedule_id = serializer.validated_data.pop("schedule").id
-            worker_id = serializer.validated_data["worker"].id
 
-            # Busca el horario seleccionado
-            schedule = Schedule.objects.filter(id=schedule_id, available=True).first()
+def create_twilio_room(room_name):
+    account_sid = settings.TWILIO_ACCOUNT_SID
+    auth_token = settings.TWILIO_AUTH_TOKEN
+    client = Client(account_sid, auth_token)
 
-            if schedule is not None:
-                # Verifica que el trabajador asociado al horario es el mismo que el trabajador de la cita
-                if schedule.worker.id != worker_id:
-                    return Response(
-                        {
-                            "error": "El trabajador de la cita y el trabajador del horario no coinciden."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                # Comprueba que el trabajador no tenga más de 8 horarios asignados en un día
-                appointments_same_day = Appointment.objects.filter(
-                    worker__id=worker_id, schedule__date=schedule.date
-                ).count()
-                if appointments_same_day >= 8:
-                    return Response(
-                        {
-                            "error": "El trabajador ya tiene 8 horarios asignados para este día."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                # Comprueba que la suma de todos los horarios asignados al trabajador no sume más de 40 horas semanales
-                week_start = schedule.date - timedelta(days=schedule.date.weekday())
-                week_end = week_start + timedelta(days=6)
-                appointments_same_week = Appointment.objects.filter(
-                    worker__id=worker_id, schedule__date__range=[week_start, week_end]
-                )
-                total_hours = appointments_same_week.aggregate(
-                    total_hours=ExpressionWrapper(
-                        Sum(F("schedule__end_time") - F("schedule__start_time")),
-                        output_field=fields.DurationField(),
-                    )
-                )["total_hours"]
-                if total_hours is not None and total_hours.total_seconds() / 3600 > 40:
-                    return Response(
-                        {
-                            "error": "El trabajador ya tiene asignadas 40 horas para esta semana."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                # Si se encontró un horario disponible y se pasaron todas las comprobaciones, crea la cita y marca el horario como no disponible
-                appointment = Appointment(
-                    schedule=schedule, **serializer.validated_data
-                )
-                appointment.save()
-                schedule.available = False
-                schedule.save()
-
-                return Response(
-                    AppointmentSerializer(appointment).data,
-                    status=status.HTTP_201_CREATED,
-                )
-            else:
-                # Si no se encontró un horario disponible, devuelve un error
-                return Response(
-                    {
-                        "error": "No hay horarios disponibles para la especialidad requerida en el horario seleccionado."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-"""
+    try:
+        room = client.video.rooms.create(unique_name=room_name)
+        meeting_link = f"https://video.twilio.com/{room.sid}"
+        print(f"Twilio room created: {meeting_link}")
+        return meeting_link
+    except Exception as e:
+        print(f"Error creating Twilio room: {e}")
+        return None
 
 
 class CreateAppointmentView(APIView):
+    permission_classes = [IsOwner]
+
     def post(self, request, format=None):
         serializer = AppointmentSerializer(data=request.data)
         if serializer.is_valid():
@@ -146,7 +88,18 @@ class CreateAppointmentView(APIView):
         return total_hours is None or total_hours.total_seconds() / 3600 <= 40
 
     def create_appointment_and_update_schedule(self, serializer, schedule):
-        appointment = Appointment(schedule=schedule, **serializer.validated_data)
+        meeting_link = None
+        if serializer.validated_data["modality"] == "VIRTUAL":
+            room_name = "Appointment {}".format(
+                schedule.id
+            )  # Genera un nombre único para la sala
+            meeting_link = create_twilio_room(room_name)
+            if meeting_link is None:
+                print("Could not create Twilio room.")
+
+        appointment = Appointment(
+            schedule=schedule, meeting_link=meeting_link, **serializer.validated_data
+        )
         appointment.save()
         schedule.available = False
         schedule.save()

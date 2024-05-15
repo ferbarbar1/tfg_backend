@@ -1,5 +1,6 @@
 from django.db import models
 from authentication.models import Client, Worker
+from owner.models import Service
 
 
 # Create your models here.
@@ -13,7 +14,7 @@ class Schedule(models.Model):
     available = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.worker}: {self.start_time} - {self.end_time}"
+        return f"{self.date} : {self.start_time} - {self.end_time}"
 
 
 class Appointment(models.Model):
@@ -34,6 +35,9 @@ class Appointment(models.Model):
     )
     worker = models.ForeignKey(
         Worker, on_delete=models.CASCADE, related_name="worker_appointments"
+    )
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="appointments"
     )
     schedule = models.ForeignKey(
         Schedule, on_delete=models.CASCADE, related_name="appointments"

@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework import routers
-from .views import CreateCheckoutSessionView
+from .views import CreateCheckoutSessionView, webhook
 from .api import RatingViewSet
 
 router = routers.DefaultRouter()
@@ -13,6 +13,7 @@ urlpatterns = [
         CreateCheckoutSessionView.as_view(),
         name="create-checkout-session",
     ),
+    path("api/webhook/", webhook, name="webhook"),
 ]
 
 urlpatterns += router.urls

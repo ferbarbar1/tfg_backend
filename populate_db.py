@@ -183,36 +183,6 @@ def create_schedules():
     print("Horarios creados con éxito")
 
 
-def create_appointments():
-    clients = Client.objects.all()
-    schedules = Schedule.objects.filter(available=True)
-
-    for i, client in enumerate(clients):
-        if schedules:
-            chosen_schedule = schedules.first()
-            if i % 2 == 0:  # Para los clientes con índice par, crea una cita virtual
-                Appointment.objects.create(
-                    client=client,
-                    worker=chosen_schedule.worker,
-                    schedule=chosen_schedule,
-                    description="Cita de ejemplo",
-                    modality="VIRTUAL",  # Añade la modalidad
-                    meeting_link="https://zoom.us/j/1234567890",  # Añade el enlace de la reunión
-                )
-            else:  # Para los clientes con índice impar, crea una cita presencial
-                Appointment.objects.create(
-                    client=client,
-                    worker=chosen_schedule.worker,
-                    schedule=chosen_schedule,
-                    description="Cita de ejemplo",
-                    modality="IN_PERSON",  # Añade la modalidad
-                )
-            chosen_schedule.available = False
-            chosen_schedule.save()
-
-    print("Citas creadas con éxito")
-
-
 def create_services():
     workers = list(Worker.objects.all())
     services = [
@@ -254,6 +224,61 @@ def create_services():
     print("Servicios creados con éxito")
 
 
+def find_eligible_worker(service_id):
+    # Esta es una simplificación. Deberías implementar tu lógica aquí para
+    # encontrar un trabajador que ofrezca el servicio y cumpla con las condiciones.
+    workers_offering_service = Service.objects.get(id=service_id).workers.filter(
+        schedules__available=True
+    )
+    if workers_offering_service:
+        return random.choice(workers_offering_service)
+    return None
+
+
+def create_appointments():
+    clients = Client.objects.all()
+    services = Service.objects.all()
+
+    if not services:
+        print("No hay servicios disponibles.")
+        return
+
+    for i, client in enumerate(clients):
+        chosen_service = random.choice(services)
+        eligible_worker = find_eligible_worker(chosen_service.id)
+
+        if not eligible_worker:
+            print(
+                f"No se encontró un trabajador elegible para el servicio {chosen_service.name}."
+            )
+            continue
+
+        # Asumiendo que cada trabajador tiene al menos un horario disponible
+        chosen_schedule = Schedule.objects.filter(
+            worker=eligible_worker, available=True
+        ).first()
+        if not chosen_schedule:
+            print(
+                f"No hay horarios disponibles para el trabajador {eligible_worker.user.email}."
+            )
+            continue
+
+        appointment = Appointment(
+            client=client,
+            worker=eligible_worker,
+            schedule=chosen_schedule,
+            service=chosen_service,
+            description="Cita de ejemplo",
+            modality="VIRTUAL" if i % 2 == 0 else "IN_PERSON",
+            meeting_link="https://zoom.us/j/1234567890" if i % 2 == 0 else "",
+        )
+        appointment.save()
+        chosen_schedule.available = False
+        chosen_schedule.save()
+
+    print("Citas creadas con éxito.")
+
+
 def create_ratings():
     # Obtén los primeros dos trabajadores
     workers = Worker.objects.all()[:2]
@@ -278,6 +303,10 @@ def create_ratings():
     print("Calificaciones creadas con éxito")
 
 
+def run_server():
+    call_command("runserver")
+
+
 def populate_db():
     print("Limpiando archivos de migraciones y __pycache__... Por favor espera")
     # Ruta de la carpeta actual donde se encuentra el script
@@ -292,8 +321,8 @@ def populate_db():
     print("Poblando la base de datos... Por favor espera")
     create_users()
     create_schedules()
-    create_appointments()
     create_services()
+    create_appointments()
     create_ratings()
     print("Población completa!")
 

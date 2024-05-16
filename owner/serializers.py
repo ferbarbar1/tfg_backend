@@ -2,15 +2,17 @@ from rest_framework import serializers
 from workers.models import Appointment
 from .models import Service
 from workers.models import Schedule
-from authentication.models import Client
+from authentication.models import Worker, Client
 from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, fields
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import timedelta
+from authentication.serializers import WorkerSerializer, ClientSerializer
+from workers.serializers import ScheduleSerializer
 
 
 class ServiceSerializer(serializers.ModelSerializer):
-    workers = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    workers = WorkerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Service
@@ -19,12 +21,23 @@ class ServiceSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     meeting_link = serializers.CharField(read_only=True)
-    schedule = serializers.PrimaryKeyRelatedField(
-        queryset=Schedule.objects.filter(available=True)
+    schedule = ScheduleSerializer(read_only=True)
+    worker = WorkerSerializer(read_only=True)
+    client = ClientSerializer(read_only=True)
+    service = ServiceSerializer(read_only=True)
+
+    # Campos para escritura
+    schedule_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        queryset=Schedule.objects.filter(available=True),
+        source="schedule",
     )
-    worker = serializers.PrimaryKeyRelatedField(read_only=True)
-    client = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all())
-    service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
+    client_id = serializers.PrimaryKeyRelatedField(
+        write_only=True, queryset=Client.objects.all(), source="client"
+    )
+    service_id = serializers.PrimaryKeyRelatedField(
+        write_only=True, queryset=Service.objects.all(), source="service"
+    )
 
     class Meta:
         model = Appointment

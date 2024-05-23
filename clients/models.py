@@ -10,7 +10,7 @@ class Rating(models.Model):
         Client, on_delete=models.CASCADE, related_name="client_ratings"
     )
     worker = models.ForeignKey(
-        Worker, on_delete=models.CASCADE, related_name="worker_ratings"
+        Worker, on_delete=models.CASCADE, related_name="worker_ratings", null=True
     )
     service = models.ForeignKey(
         Service, on_delete=models.CASCADE, related_name="service_ratings"
@@ -20,4 +20,4 @@ class Rating(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("client", "worker", "service")
+        unique_together = ("client", "service")

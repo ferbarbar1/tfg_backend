@@ -180,10 +180,19 @@ STRIPE_WEBHOOK_SECRET = (
     "whsec_d06fb4ec31116b0dca70cd584f1a552e90dfe85d205cc44aea9b45ed006b86a4"
 )
 
+# Configuración de correo electrónico
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # Por ejemplo, 'smtp.gmail.com' para Gmail
+EMAIL_PORT = 587  # Puerto típico para correo seguro
+EMAIL_USE_TLS = True  # Usar TLS
+EMAIL_HOST_USER = "fisioterappia.clinic@gmail.com"
+EMAIL_HOST_PASSWORD = "ynbq fzoz vxpw aqlz"
+
 SITE_URL = "http://localhost:5173"
 
-TWILIO_ACCOUNT_SID = "AC4726bad3fa8bf39c1b6c26cd12b49899"
-TWILIO_AUTH_TOKEN = "1b24006add1bbf77fff4e4a6e5cde9ac"
+ZOOM_CLIENT_ID = "d0NInwj3Q3SFiF09kf9c8w"
+ZOOM_CLIENT_SECRET = "lh1g3SLOpynodik1pItAdCP55qNOLbpr"
+ZOOM_REDIRECT_URI = "http://127.0.0.1:8000/api/oauth/callback"
 
 
 MEDIA_ROOT = BASE_DIR / "media"

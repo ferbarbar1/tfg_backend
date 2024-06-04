@@ -16,6 +16,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "role",
+            "image",
         ]
 
     def create(self, validated_data):
@@ -49,6 +50,7 @@ class OwnerSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
+        user.image = user_data.get("image", user.image)
         user.save()
 
         return instance
@@ -59,7 +61,7 @@ class WorkerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Worker
-        fields = ["id", "user", "salary", "specialty"]
+        fields = ["id", "user", "salary", "specialty", "experience"]
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
@@ -82,6 +84,7 @@ class WorkerSerializer(serializers.ModelSerializer):
         # Actualiza los campos del trabajador
         instance.salary = validated_data.get("salary", instance.salary)
         instance.specialty = validated_data.get("specialty", instance.specialty)
+        instance.experience = validated_data.get("experience", instance.experience)
         instance.save()
 
         return instance

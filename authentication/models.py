@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser, Permission
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
+    image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
 
     def get_role(self):
         if hasattr(self, "owner"):
@@ -36,6 +37,7 @@ class Worker(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     salary = models.DecimalField(max_digits=8, decimal_places=2)
     specialty = models.CharField(max_length=255)
+    experience = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "Worker"

@@ -116,19 +116,26 @@ def create_users():
         super_user.save()
 
     # Crear varios trabajadores y clientes
-    for i in range(5):
+    for i in range(3):
         if not CustomUser.objects.filter(email=f"worker{i}@example.com").exists():
-            worker_user = CustomUser.objects.create_user(
-                f"worker{i}",
-                f"worker{i}@example.com",
-                "workerpassword",
-                first_name=f"Worker{i}",
-                last_name="User",
-            )
+            with open(
+                f"media/profile_images/worker{i}.{'png' if i != 1 else 'jpg'}", "rb"
+            ) as img_file:
+                worker_user = CustomUser.objects.create_user(
+                    f"worker{i}",
+                    f"worker{i}@example.com",
+                    "workerpassword",
+                    first_name=f"Worker{i}",
+                    last_name="User",
+                    image=File(
+                        img_file, name=f"worker{i}.{'png' if i != 1 else 'jpg'}"
+                    ),
+                )
             Worker.objects.create(
                 user=worker_user,
                 salary=5000.00,
-                specialty="Especialidad",
+                specialty="Especialidad de ejemplo",
+                experience=1,
             )
             worker_user.get_role = "worker"
             worker_user.save()
@@ -207,7 +214,7 @@ def create_services():
     ]
 
     for service in services:
-        with open(f"media/images/{service['image']}", "rb") as img_file:
+        with open(f"media/service_images/{service['image']}", "rb") as img_file:
             service = Service.objects.create(
                 name=service["name"],
                 description=service["description"],

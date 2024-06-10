@@ -287,21 +287,14 @@ def create_appointments():
 
 
 def create_ratings():
-    # Obtén los primeros dos trabajadores
-    workers = Worker.objects.all()[:2]
-
-    # Obtén los primeros dos clientes
-    clients = Client.objects.all()[:2]
-
-    # Obtén el primer servicio
-    service = Service.objects.first()
+    # Obtén los primeros dos citas
+    appointments = Appointment.objects.all()[:2]
 
     # Crea dos calificaciones
     for i in range(2):
         Rating.objects.create(
-            worker=workers[i],
-            client=clients[i],
-            service=service,
+            appointment=appointments[i],
+            client=appointments[i].client,
             rate=i + 3,  # Puntuaciones de 3 y 4
             opinion=f"Opinión {i+1}",
             date=datetime.now(),  # Añade la fecha y hora actual

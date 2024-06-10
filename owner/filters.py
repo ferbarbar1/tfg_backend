@@ -5,4 +5,4 @@ from workers.models import Appointment
 class AppointmentFilter(filters.FilterSet):
     class Meta:
         model = Appointment
-        fields = ["client", "worker"]
+        fields = ["client", "worker", "service"]

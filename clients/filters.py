@@ -5,4 +5,4 @@ from .models import Rating
 class RatingFilter(filters.FilterSet):
     class Meta:
         model = Rating
-        fields = ["service"]
+        fields = ["appointment", "client"]

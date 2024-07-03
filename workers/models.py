@@ -1,6 +1,6 @@
 from django.db import models
-from authentication.models import Client, Worker
-from owner.models import Service
+from authentication.models import Worker
+from clients.models import Appointment
 
 
 # Create your models here.
@@ -17,34 +17,8 @@ class Schedule(models.Model):
         return f"{self.date} : {self.start_time} - {self.end_time}"
 
 
-class Appointment(models.Model):
-    STATUS_CHOICES = [
-        ("PENDING", "Pending"),
-        ("CONFIRMED", "Confirmed"),
-        ("CANCELLED", "Cancelled"),
-        ("COMPLETED", "Completed"),
-    ]
-
-    MODALITY_CHOICES = [
-        ("VIRTUAL", "Virtual"),
-        ("IN_PERSON", "In person"),
-    ]
-
-    client = models.ForeignKey(
-        Client, on_delete=models.CASCADE, related_name="client_appointments"
+class Inform(models.Model):
+    appointment = models.ForeignKey(
+        Appointment, on_delete=models.CASCADE, related_name="inform"
     )
-    worker = models.ForeignKey(
-        Worker, on_delete=models.CASCADE, related_name="worker_appointments"
-    )
-    service = models.ForeignKey(
-        Service, on_delete=models.CASCADE, related_name="appointments"
-    )
-    schedule = models.ForeignKey(
-        Schedule, on_delete=models.CASCADE, related_name="appointments"
-    )
-    description = models.TextField(blank=True, max_length=255)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
-    modality = models.CharField(
-        max_length=10, choices=MODALITY_CHOICES, default="IN_PERSON"
-    )
-    meeting_link = models.URLField(blank=True, null=True)
+    treatment = models.TextField(blank=True, max_length=255)

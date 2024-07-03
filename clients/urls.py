@@ -1,10 +1,11 @@
 from django.urls import path
 from rest_framework import routers
 from .views import CreateCheckoutSessionView, webhook, ZoomAuthView, ZoomCallbackView
-from .api import RatingViewSet
+from .api import AppointmentViewSet, RatingViewSet
 
 router = routers.DefaultRouter()
 
+router.register("api/appointments", AppointmentViewSet, "appointments")
 router.register("api/ratings", RatingViewSet, "ratings")
 
 urlpatterns = [

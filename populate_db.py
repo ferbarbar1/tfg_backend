@@ -13,7 +13,7 @@ django.setup()
 from django.core.management import call_command
 from authentication.models import CustomUser, Owner, Client, Worker
 from workers.models import Schedule
-from workers.models import Appointment
+from clients.models import Appointment
 from owner.models import Service
 from clients.models import Rating
 import random

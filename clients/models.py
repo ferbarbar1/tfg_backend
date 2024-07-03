@@ -2,10 +2,42 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from authentication.models import Client, Worker
 from owner.models import Service
-from workers.models import Appointment
 
 
 # Create your models here.
+class Appointment(models.Model):
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("CONFIRMED", "Confirmed"),
+        ("CANCELLED", "Cancelled"),
+        ("COMPLETED", "Completed"),
+    ]
+
+    MODALITY_CHOICES = [
+        ("VIRTUAL", "Virtual"),
+        ("IN_PERSON", "In person"),
+    ]
+
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name="client_appointments"
+    )
+    worker = models.ForeignKey(
+        Worker, on_delete=models.CASCADE, related_name="worker_appointments"
+    )
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="appointments"
+    )
+    schedule = models.ForeignKey(
+        "workers.Schedule", on_delete=models.CASCADE, related_name="appointments"
+    )
+    description = models.TextField(blank=True, max_length=255)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
+    modality = models.CharField(
+        max_length=10, choices=MODALITY_CHOICES, default="IN_PERSON"
+    )
+    meeting_link = models.URLField(blank=True, null=True)
+
+
 class Rating(models.Model):
     client = models.ForeignKey(
         Client, on_delete=models.CASCADE, related_name="client_ratings"

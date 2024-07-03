@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import stripe
 from owner.models import Service
-from owner.serializers import AppointmentSerializer
+from .serializers import AppointmentSerializer
 import requests
 
 

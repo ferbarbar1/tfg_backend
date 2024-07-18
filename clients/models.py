@@ -7,7 +7,6 @@ from owner.models import Service
 # Create your models here.
 class Appointment(models.Model):
     STATUS_CHOICES = [
-        ("PENDING", "Pending"),
         ("CONFIRMED", "Confirmed"),
         ("CANCELLED", "Cancelled"),
         ("COMPLETED", "Completed"),
@@ -31,7 +30,9 @@ class Appointment(models.Model):
         "workers.Schedule", on_delete=models.CASCADE, related_name="appointments"
     )
     description = models.TextField(blank=True, max_length=255)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default="CONFIRMED"
+    )
     modality = models.CharField(
         max_length=10, choices=MODALITY_CHOICES, default="IN_PERSON"
     )

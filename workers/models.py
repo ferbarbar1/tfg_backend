@@ -21,4 +21,6 @@ class Inform(models.Model):
     appointment = models.ForeignKey(
         Appointment, on_delete=models.CASCADE, related_name="inform"
     )
+    medical_history = models.TextField(blank=True, max_length=255)
+    diagnostic = models.TextField(blank=True, max_length=255)
     treatment = models.TextField(blank=True, max_length=255)

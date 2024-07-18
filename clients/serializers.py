@@ -38,7 +38,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         schedule = attrs.get("schedule")
-        if not schedule.available:
+        if schedule and not schedule.available:
             raise serializers.ValidationError("This schedule is not available.")
         return attrs
 
@@ -124,13 +124,23 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 )
             instance.worker = worker
 
+        # Solo actualizar el estado si es necesario
+        instance.status = validated_data.get("status", instance.status)
+
         instance.save()
         return instance
 
 
 class RatingSerializer(serializers.ModelSerializer):
-    client = ClientSerializer()
+    client = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all())
 
     class Meta:
         model = Rating
         fields = ["id", "client", "rate", "opinion", "date", "appointment"]
+
+    def validate(self, data):
+        if data["rate"] < 1 or data["rate"] > 5:
+            raise serializers.ValidationError("Rate must be between 1 and 5")
+        if not data["opinion"]:
+            raise serializers.ValidationError("Opinion is required")
+        return data

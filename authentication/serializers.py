@@ -17,6 +17,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "email",
             "role",
             "image",
+            "date_of_birth",
         ]
 
     def create(self, validated_data):

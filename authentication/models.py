@@ -1,10 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Permission
+from datetime import date
 
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
+    date_of_birth = models.DateField(null=True, blank=True)
 
     def get_role(self):
         if hasattr(self, "owner"):

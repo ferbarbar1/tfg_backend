@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from .models import Rating, Appointment
 from owner.models import Service
-from workers.models import Schedule
+from workers.models import Schedule, Inform
 from authentication.models import Client
 from django.db import transaction
 from django.db.models import Sum, F, ExpressionWrapper, fields
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import timedelta
 from authentication.serializers import WorkerSerializer, ClientSerializer
-from workers.serializers import ScheduleSerializer
+from workers.serializers import ScheduleSerializer, InformSerializer
 from owner.serializers import ServiceSerializer
 
 
@@ -18,6 +18,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     worker = WorkerSerializer(read_only=True)
     client = ClientSerializer(read_only=True)
     service = ServiceSerializer(read_only=True)
+    inform = InformSerializer(read_only=True)
 
     # Campos para escritura
     schedule_id = serializers.PrimaryKeyRelatedField(
@@ -30,6 +31,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
     )
     service_id = serializers.PrimaryKeyRelatedField(
         write_only=True, queryset=Service.objects.all(), source="service"
+    )
+    inform_id = serializers.PrimaryKeyRelatedField(
+        write_only=True, queryset=Inform.objects.all(), source="inform"
     )
 
     class Meta:
@@ -97,6 +101,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
         # Actualiza campos modificables directamente
         instance.client = validated_data.get("client", instance.client)
         instance.service = validated_data.get("service", instance.service)
+        instance.save()
+
+        # Actualiza el campo inform si está presente en los datos validados
+        new_inform = validated_data.get("inform")
+        if new_inform:
+            instance.inform = new_inform
+
         instance.save()
 
         # Si se proporciona un nuevo schedule, actualiza el horario de la cita

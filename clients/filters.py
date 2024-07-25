@@ -6,7 +6,7 @@ from .models import Appointment
 class AppointmentFilter(filters.FilterSet):
     class Meta:
         model = Appointment
-        fields = ["client", "worker", "service"]
+        fields = ["client", "worker", "service", "inform"]
 
 
 class RatingFilter(filters.FilterSet):

@@ -1,6 +1,5 @@
 from django.db import models
 from authentication.models import Worker
-from clients.models import Appointment
 
 
 # Create your models here.
@@ -18,9 +17,6 @@ class Schedule(models.Model):
 
 
 class Inform(models.Model):
-    appointment = models.ForeignKey(
-        Appointment, on_delete=models.CASCADE, related_name="inform"
-    )
     medical_history = models.TextField(blank=True, max_length=255)
     diagnostic = models.TextField(blank=True, max_length=255)
     treatment = models.TextField(blank=True, max_length=255)

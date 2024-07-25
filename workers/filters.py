@@ -1,5 +1,5 @@
 from django_filters import rest_framework as filters
-from .models import Schedule
+from .models import Schedule, Inform
 
 
 class ScheduleFilter(filters.FilterSet):

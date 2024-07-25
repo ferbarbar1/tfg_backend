@@ -98,11 +98,11 @@ def create_users():
             "ownerpassword",
             first_name="Owner",
             last_name="User",
+            date_of_birth=date(1980, 1, 1),
         )
         Owner.objects.create(user=owner_user)
         owner_user.get_role = "owner"
         owner_user.save()
-
     # Crear superusuario
     if not CustomUser.objects.filter(email="superuser@example.com").exists():
         super_user = CustomUser.objects.create_superuser(
@@ -111,26 +111,21 @@ def create_users():
             "superuser",
             first_name="Super",
             last_name="User",
+            date_of_birth=date(1985, 5, 15),
         )
         super_user.get_role = "superuser"
         super_user.save()
-
     # Crear varios trabajadores y clientes
     for i in range(3):
         if not CustomUser.objects.filter(email=f"worker{i}@example.com").exists():
-            with open(
-                f"media/profile_images/worker{i}.{'png' if i != 1 else 'jpg'}", "rb"
-            ) as img_file:
-                worker_user = CustomUser.objects.create_user(
-                    f"worker{i}",
-                    f"worker{i}@example.com",
-                    "workerpassword",
-                    first_name=f"Worker{i}",
-                    last_name="User",
-                    image=File(
-                        img_file, name=f"worker{i}.{'png' if i != 1 else 'jpg'}"
-                    ),
-                )
+            worker_user = CustomUser.objects.create_user(
+                f"worker{i}",
+                f"worker{i}@example.com",
+                "workerpass",
+                first_name=f"Worker{i}",
+                last_name="User",
+                date_of_birth=date(1990, i + 1, i + 10),
+            )
             Worker.objects.create(
                 user=worker_user,
                 salary=5000.00,
@@ -139,14 +134,14 @@ def create_users():
             )
             worker_user.get_role = "worker"
             worker_user.save()
-
         if not CustomUser.objects.filter(email=f"client{i}@example.com").exists():
             client_user = CustomUser.objects.create_user(
                 f"client{i}",
                 f"client{i}@example.com",
-                "clientpassword",
+                "clientpass",
                 first_name=f"Client{i}",
                 last_name="User",
+                date_of_birth=date(1995, i + 2, i + 5),
             )
             Client.objects.create(
                 user=client_user,
@@ -154,7 +149,6 @@ def create_users():
             )
             client_user.get_role = "client"
             client_user.save()
-
     print("Usuarios creados con éxito")
 
 

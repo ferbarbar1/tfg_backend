@@ -25,15 +25,19 @@ class AppointmentSerializer(serializers.ModelSerializer):
         write_only=True,
         queryset=Schedule.objects.filter(available=True),
         source="schedule",
+        required=False,
     )
     client_id = serializers.PrimaryKeyRelatedField(
-        write_only=True, queryset=Client.objects.all(), source="client"
+        write_only=True, queryset=Client.objects.all(), source="client", required=False
     )
     service_id = serializers.PrimaryKeyRelatedField(
-        write_only=True, queryset=Service.objects.all(), source="service"
+        write_only=True,
+        queryset=Service.objects.all(),
+        source="service",
+        required=False,
     )
     inform_id = serializers.PrimaryKeyRelatedField(
-        write_only=True, queryset=Inform.objects.all(), source="inform"
+        write_only=True, queryset=Inform.objects.all(), source="inform", required=False
     )
 
     class Meta:
@@ -101,14 +105,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
         # Actualiza campos modificables directamente
         instance.client = validated_data.get("client", instance.client)
         instance.service = validated_data.get("service", instance.service)
-        instance.save()
+        instance.status = validated_data.get("status", instance.status)
 
         # Actualiza el campo inform si está presente en los datos validados
         new_inform = validated_data.get("inform")
         if new_inform:
             instance.inform = new_inform
-
-        instance.save()
 
         # Si se proporciona un nuevo schedule, actualiza el horario de la cita
         new_schedule = validated_data.get("schedule")
@@ -135,9 +137,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 )
             instance.worker = worker
 
-        # Solo actualizar el estado si es necesario
-        instance.status = validated_data.get("status", instance.status)
-
+        # Guarda la instancia después de todas las actualizaciones
         instance.save()
         return instance
 

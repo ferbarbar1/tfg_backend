@@ -95,7 +95,7 @@ def create_users():
         owner_user = CustomUser.objects.create_user(
             "owner",
             "owner@example.com",
-            "ownerpassword",
+            "ownerpass",
             first_name="Owner",
             last_name="User",
             date_of_birth=date(1980, 1, 1),
@@ -271,7 +271,6 @@ def create_appointments():
             service=chosen_service,
             description="Cita de ejemplo",
             modality="VIRTUAL" if i % 2 == 0 else "IN_PERSON",
-            meeting_link="https://zoom.us/j/1234567890" if i % 2 == 0 else "",
         )
         appointment.save()
         chosen_schedule.available = False

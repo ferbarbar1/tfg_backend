@@ -17,6 +17,6 @@ class Schedule(models.Model):
 
 
 class Inform(models.Model):
-    medical_history = models.TextField(blank=True, max_length=255)
-    diagnostic = models.TextField(blank=True, max_length=255)
-    treatment = models.TextField(blank=True, max_length=255)
+    relevant_information = models.TextField(null=True, max_length=255)
+    diagnostic = models.TextField(max_length=255)
+    treatment = models.TextField(max_length=255)

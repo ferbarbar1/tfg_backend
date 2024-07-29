@@ -1,8 +1,11 @@
-from .models import Rating
-from .models import Appointment
-from .serializers import RatingSerializer, AppointmentSerializer
+from .models import Rating, Appointment, MedicalHistory
+from .serializers import (
+    RatingSerializer,
+    AppointmentSerializer,
+    MedicalHistorySerializer,
+)
 from rest_framework import viewsets, permissions
-from .filters import RatingFilter, AppointmentFilter
+from .filters import RatingFilter, AppointmentFilter, MedicalHistoryFilter
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
@@ -17,3 +20,10 @@ class RatingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = RatingSerializer
     filterset_class = RatingFilter
+
+
+class MedicalHistoryViewSet(viewsets.ModelViewSet):
+    queryset = MedicalHistory.objects.all()
+    permission_classes = [permissions.AllowAny]
+    serializer_class = MedicalHistorySerializer
+    filterset_class = MedicalHistoryFilter

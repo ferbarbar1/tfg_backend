@@ -65,3 +65,12 @@ class Rating(models.Model):
     rate = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     opinion = models.CharField(max_length=255)
     date = models.DateTimeField(auto_now_add=True)
+
+
+class MedicalHistory(models.Model):
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name="client_medical_history"
+    )
+    date = models.DateField(auto_now_add=True)
+    description = models.TextField(max_length=255)
+    medical_report = models.FileField(upload_to="medical_reports/")

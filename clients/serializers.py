@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Rating, Appointment
+from .models import Rating, Appointment, MedicalHistory
 from owner.models import Service
 from workers.models import Schedule, Inform
 from authentication.models import Client
@@ -155,3 +155,9 @@ class RatingSerializer(serializers.ModelSerializer):
         if not data["opinion"]:
             raise serializers.ValidationError("Opinion is required")
         return data
+
+
+class MedicalHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalHistory
+        fields = "__all__"

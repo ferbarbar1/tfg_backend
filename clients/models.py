@@ -73,4 +73,6 @@ class MedicalHistory(models.Model):
     )
     date = models.DateField(auto_now_add=True)
     description = models.TextField(max_length=255)
-    medical_report = models.FileField(upload_to="medical_reports/")
+    medical_report = models.FileField(
+        upload_to="medical_reports/", null=True, blank=True
+    )

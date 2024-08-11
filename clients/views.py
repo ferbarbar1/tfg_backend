@@ -24,6 +24,9 @@ class CreateCheckoutSessionView(APIView):
 
         service = get_object_or_404(Service, id=service_id)
 
+        # Ver si hay una oferta activa para el servicio
+        discounted_price = service.get_discounted_price()
+
         try:
             checkout_session = stripe.checkout.Session.create(
                 line_items=[
@@ -31,7 +34,7 @@ class CreateCheckoutSessionView(APIView):
                         "price_data": {
                             "currency": "eur",
                             "product_data": {"name": service.name},
-                            "unit_amount": int(float(service.price) * 100),
+                            "unit_amount": int(float(discounted_price) * 100),
                         },
                         "quantity": 1,
                     },

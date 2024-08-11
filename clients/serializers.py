@@ -143,11 +143,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 
 class RatingSerializer(serializers.ModelSerializer):
-    client = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all())
+    client = ClientSerializer(read_only=True)
+    client_id = serializers.PrimaryKeyRelatedField(
+        queryset=Client.objects.all(), write_only=True, source="client"
+    )
 
     class Meta:
         model = Rating
-        fields = ["id", "client", "rate", "opinion", "date", "appointment"]
+        fields = ["id", "client", "client_id", "rate", "opinion", "date", "appointment"]
 
     def validate(self, data):
         if data["rate"] < 1 or data["rate"] > 5:

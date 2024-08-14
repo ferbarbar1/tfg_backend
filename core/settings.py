@@ -43,6 +43,8 @@ if RAILWAY_EXTERNAL_HOSTNAME:
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -58,6 +60,7 @@ INSTALLED_APPS = [
     "owner",
     "workers",
     "clients",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -197,3 +200,17 @@ ZOOM_REDIRECT_URI = "http://127.0.0.1:8000/api/oauth/callback"
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
+
+# Necesario para Django Channels
+ASGI_APPLICATION = "core.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # Para producción, usa Redis:
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 6379)],
+        # },
+    },
+}

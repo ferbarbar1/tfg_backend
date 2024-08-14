@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from authentication.models import Client, Worker
 from owner.models import Service
 from workers.models import Inform
+from chat.models import Conversation
 
 
 # Create your models here.

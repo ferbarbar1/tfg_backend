@@ -7,12 +7,8 @@ class ParticipantsFilter(filters.BaseCSVFilter, filters.NumberFilter):
     def filter(self, qs, value):
         if not value:
             return qs
-        # Convertir los valores a un conjunto de enteros
         participant_ids = set(map(int, value))
-        # Filtrar las conversaciones que tienen exactamente los participantes especificados
-        filtered_qs = qs.annotate(num_participants=Count("participants")).filter(
-            num_participants=len(participant_ids)
-        )
+        filtered_qs = qs
         for participant_id in participant_ids:
             filtered_qs = filtered_qs.filter(participants__id=participant_id)
         return filtered_qs.distinct()

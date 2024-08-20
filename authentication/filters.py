@@ -5,4 +5,4 @@ from .models import CustomUser
 class CustomUserFilter(filters.FilterSet):
     class Meta:
         model = CustomUser
-        fields = ["username"]
+        fields = ["id", "username"]

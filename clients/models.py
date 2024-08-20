@@ -3,7 +3,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from authentication.models import Client, Worker
 from owner.models import Service
 from workers.models import Inform
-from chat.models import Conversation
 
 
 # Create your models here.
@@ -40,7 +39,6 @@ class Appointment(models.Model):
     modality = models.CharField(
         max_length=10, choices=MODALITY_CHOICES, default="IN_PERSON"
     )
-    meeting_link = models.URLField(blank=True, null=True)
     inform = models.OneToOneField(
         Inform,
         on_delete=models.CASCADE,
@@ -48,6 +46,9 @@ class Appointment(models.Model):
         blank=True,
         related_name="appointment_inform",
     )
+    # Campos para las videollamadas
+    client_peer_id = models.CharField(max_length=100, blank=True, null=True)
+    worker_peer_id = models.CharField(max_length=100, blank=True, null=True)
 
 
 class Rating(models.Model):

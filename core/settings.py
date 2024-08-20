@@ -193,11 +193,6 @@ EMAIL_HOST_PASSWORD = "ynbq fzoz vxpw aqlz"
 
 SITE_URL = "http://localhost:5173"
 
-ZOOM_CLIENT_ID = "d0NInwj3Q3SFiF09kf9c8w"
-ZOOM_CLIENT_SECRET = "lh1g3SLOpynodik1pItAdCP55qNOLbpr"
-ZOOM_REDIRECT_URI = "http://127.0.0.1:8000/api/oauth/callback"
-
-
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 

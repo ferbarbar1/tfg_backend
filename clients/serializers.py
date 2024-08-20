@@ -13,12 +13,19 @@ from owner.serializers import ServiceSerializer
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    meeting_link = serializers.CharField(read_only=True)
     schedule = ScheduleSerializer(read_only=True)
     worker = WorkerSerializer(read_only=True)
     client = ClientSerializer(read_only=True)
     service = ServiceSerializer(read_only=True)
     inform = InformSerializer(read_only=True)
+
+    # Campos para peer_ids
+    client_peer_id = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    worker_peer_id = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
 
     # Campos para escritura
     schedule_id = serializers.PrimaryKeyRelatedField(
@@ -101,6 +108,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         )["total_hours"]
         return total_hours is not None and total_hours.total_seconds() / 3600 > 40
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         # Actualiza campos modificables directamente
         instance.client = validated_data.get("client", instance.client)
@@ -111,6 +119,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
         new_inform = validated_data.get("inform")
         if new_inform:
             instance.inform = new_inform
+
+        # Actualiza los campos de peer_id si están presentes
+        instance.client_peer_id = validated_data.get(
+            "client_peer_id", instance.client_peer_id
+        )
+        instance.worker_peer_id = validated_data.get(
+            "worker_peer_id", instance.worker_peer_id
+        )
 
         # Si se proporciona un nuevo schedule, actualiza el horario de la cita
         new_schedule = validated_data.get("schedule")

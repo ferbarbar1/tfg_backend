@@ -65,7 +65,6 @@ def create_users():
             )
             Worker.objects.create(
                 user=worker_user,
-                salary=5000.00,
                 specialty="Especialidad",
             )
         if not CustomUser.objects.filter(email=f"client{i}@example.com").exists():
@@ -78,7 +77,6 @@ def create_users():
             )
             Client.objects.create(
                 user=client_user,
-                subscription_plan="FREE",
             )
 
     print("Usuarios creados con éxito")

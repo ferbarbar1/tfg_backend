@@ -74,6 +74,7 @@ class MedicalHistory(models.Model):
         Client, on_delete=models.CASCADE, related_name="client_medical_history"
     )
     date = models.DateField(auto_now_add=True)
+    title = models.CharField(max_length=32)
     description = models.TextField(max_length=255)
     medical_report = models.FileField(
         upload_to="medical_reports/", null=True, blank=True

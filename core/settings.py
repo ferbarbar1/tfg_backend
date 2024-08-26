@@ -209,3 +209,20 @@ CHANNEL_LAYERS = {
         # },
     },
 }
+
+# Configuración de Celery (para crear horarios automaticamente)
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+from celery.schedules import schedule
+
+CELERY_BEAT_SCHEDULE = {
+    "create-schedules-every-two-weeks": {
+        "task": "workers.tasks.create_schedules_for_all_workers",
+        "schedule": schedule(run_every=14 * 24 * 60 * 60),  # Cada 14 días
+    },
+}

@@ -51,7 +51,11 @@ class OwnerSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
-        user.image = user_data.get("image", user.image)
+        user.date_of_birth = user_data.get("date_of_birth", user.date_of_birth)
+
+        if "image" in user_data:
+            user.image = user_data.get("image")
+
         user.save()
 
         return instance
@@ -62,7 +66,7 @@ class WorkerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Worker
-        fields = ["id", "user", "salary", "specialty", "experience"]
+        fields = ["id", "user", "specialty", "experience"]
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
@@ -80,10 +84,14 @@ class WorkerSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
+        user.date_of_birth = user_data.get("date_of_birth", user.date_of_birth)
+
+        if "image" in user_data:
+            user.image = user_data["image"]
+
         user.save()
 
         # Actualiza los campos del trabajador
-        instance.salary = validated_data.get("salary", instance.salary)
         instance.specialty = validated_data.get("specialty", instance.specialty)
         instance.experience = validated_data.get("experience", instance.experience)
         instance.save()
@@ -96,7 +104,7 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ["id", "user", "subscription_plan"]
+        fields = ["id", "user"]
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
@@ -114,12 +122,11 @@ class ClientSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
-        user.save()
+        user.date_of_birth = user_data.get("date_of_birth", user.date_of_birth)
 
-        # Actualiza los campos del cliente
-        instance.subscription_plan = validated_data.get(
-            "subscription_plan", instance.subscription_plan
-        )
-        instance.save()
+        if "image" in user_data:
+            user.image = user_data["image"]
+
+        user.save()
 
         return instance

@@ -116,6 +116,7 @@ def create_users():
         super_user.get_role = "superuser"
         super_user.save()
     # Crear varios trabajadores y clientes
+    worker_images = ["worker0.png", "worker1.jpg", "worker2.png"]
     for i in range(3):
         if not CustomUser.objects.filter(email=f"worker{i}@example.com").exists():
             worker_user = CustomUser.objects.create_user(
@@ -126,9 +127,11 @@ def create_users():
                 last_name="User",
                 date_of_birth=date(1990, i + 1, i + 10),
             )
+            worker_image_path = f"media/profile_images/{worker_images[i]}"
+            with open(worker_image_path, "rb") as img_file:
+                worker_user.image.save(worker_images[i], File(img_file), save=True)
             Worker.objects.create(
                 user=worker_user,
-                salary=5000.00,
                 specialty="Especialidad de ejemplo",
                 experience=1,
             )
@@ -145,7 +148,6 @@ def create_users():
             )
             Client.objects.create(
                 user=client_user,
-                subscription_plan="FREE",
             )
             client_user.get_role = "client"
             client_user.save()

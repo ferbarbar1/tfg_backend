@@ -1,6 +1,10 @@
-from .models import Conversation, Message
-from .serializers import ConversationSerializer, MessageSerializer
-from .filters import ConversationFilter, MessageFilter
+from .models import Conversation, Message, Notification
+from .serializers import (
+    ConversationSerializer,
+    MessageSerializer,
+    NotificationSerializer,
+)
+from .filters import ConversationFilter, MessageFilter, NotificationFilter
 from rest_framework import viewsets, permissions
 
 
@@ -16,3 +20,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = MessageSerializer
     filterset_class = MessageFilter
+
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    permission_classes = [permissions.AllowAny]
+    serializer_class = NotificationSerializer
+    filterset_class = NotificationFilter

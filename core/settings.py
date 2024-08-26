@@ -218,11 +218,15 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
-from celery.schedules import schedule
+from celery.schedules import schedule, crontab
 
 CELERY_BEAT_SCHEDULE = {
     "create-schedules-every-two-weeks": {
         "task": "workers.tasks.create_schedules_for_all_workers",
         "schedule": schedule(run_every=14 * 24 * 60 * 60),  # Cada 14 días
+    },
+    "send-appointment-reminders-every-day": {
+        "task": "clients.tasks.send_appointment_reminders",
+        "schedule": crontab(hour=7, minute=30),  # A las 7:30 AM
     },
 }

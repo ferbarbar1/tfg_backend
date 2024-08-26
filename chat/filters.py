@@ -1,6 +1,5 @@
 from django_filters import rest_framework as filters
-from django.db.models import Count, Q
-from .models import Conversation, Message
+from .models import Conversation, Message, Notification
 
 
 class ParticipantsFilter(filters.BaseCSVFilter, filters.NumberFilter):
@@ -26,3 +25,9 @@ class MessageFilter(filters.FilterSet):
     class Meta:
         model = Message
         fields = ["conversation"]
+
+
+class NotificationFilter(filters.FilterSet):
+    class Meta:
+        model = Notification
+        fields = ["user", "is_read"]

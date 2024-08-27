@@ -38,3 +38,25 @@ class Offer(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Invoice(models.Model):
+    appointment = models.OneToOneField(
+        "clients.Appointment", on_delete=models.CASCADE, related_name="invoice"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Invoice for {self.appointment.id}"
+
+    @property
+    def client_email(self):
+        return self.appointment.client.email
+
+    @property
+    def service_name(self):
+        return self.appointment.service.name
+
+    @property
+    def amount(self):
+        return self.appointment.service.price

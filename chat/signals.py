@@ -8,12 +8,11 @@ def create_notification(sender, instance, created, **kwargs):
     if created:
         conversation = instance.conversation
         sender = instance.sender
-        content = instance.content
 
         # Crear notificaciones para todos los participantes excepto el remitente
         for participant in conversation.participants.exclude(id=sender.id):
             Notification.objects.create(
                 user=participant,
-                message=f"Tienes un nuevo mensaje de {sender.username}: {content}",
+                message=f"Tienes un nuevo mensaje de {sender.username}",
                 type=Notification.MESSAGE,
             )

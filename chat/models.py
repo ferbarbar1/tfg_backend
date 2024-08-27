@@ -7,6 +7,7 @@ from django.dispatch import receiver
 class Conversation(models.Model):
     participants = models.ManyToManyField(CustomUser, related_name="conversations")
     created_at = models.DateTimeField(auto_now_add=True)
+    last_message = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Conversation between {', '.join(user.username for user in self.participants.all())}"
@@ -24,6 +25,11 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} at {self.timestamp}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.conversation.last_message = self.timestamp
+        self.conversation.save()
 
 
 class Notification(models.Model):
@@ -51,10 +57,9 @@ def create_notification(sender, instance, created, **kwargs):
     if created:
         conversation = instance.conversation
         sender = instance.sender
-        content = instance.content
 
         for participant in conversation.participants.exclude(id=sender.id):
             Notification.objects.create(
                 user=participant,
-                message=f"Tienes un nuevo mensaje de {sender.username}: {content}",
+                message=f"Tienes un nuevo mensaje de {sender.username}",
             )

@@ -24,7 +24,7 @@ class ConversationFilter(filters.FilterSet):
 class MessageFilter(filters.FilterSet):
     class Meta:
         model = Message
-        fields = ["conversation"]
+        fields = ["conversation", "sender"]
 
 
 class NotificationFilter(filters.FilterSet):

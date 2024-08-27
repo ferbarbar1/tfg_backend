@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Service, Offer
+from .models import Service, Offer, Invoice
 from authentication.serializers import WorkerSerializer
 
 
@@ -26,3 +26,9 @@ class OfferSerializer(serializers.ModelSerializer):
             instance.services.all(), many=True
         ).data
         return representation
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invoice
+        fields = "__all__"

@@ -9,7 +9,7 @@ from rest_framework import viewsets, permissions
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.all()
+    queryset = Conversation.objects.all().order_by("-last_message")
     permission_classes = [permissions.AllowAny]
     serializer_class = ConversationSerializer
     filterset_class = ConversationFilter

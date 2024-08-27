@@ -1,15 +1,18 @@
 from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
 import stripe
-from owner.models import Service
+from xhtml2pdf import pisa
+from io import BytesIO
+from owner.models import Service, Invoice
 from .serializers import AppointmentSerializer
+from django.template.loader import render_to_string
 
-# Asegúrate de que la clave API de Stripe se establezca de manera segura
+
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -139,42 +142,55 @@ def webhook(request):
         if serializer.is_valid():
             appointment = serializer.save()
 
-            customer_email = session.get("customer_details").get("email")
-            existing_customers = stripe.Customer.list(email=customer_email).data
-            if existing_customers:
-                customer = existing_customers[0]
-            else:
-                customer = stripe.Customer.create(email=customer_email)
+            # Crear la factura asociada a la cita
+            invoice = Invoice.objects.create(appointment=appointment)
 
-            try:
-                invoice_item = stripe.InvoiceItem.create(
-                    customer=customer.id,
-                    amount=int(float(session.get("amount_total"))),
-                    currency=session.get("currency"),
-                    description="Appointment booking",
-                )
-                invoice = stripe.Invoice.create(
-                    customer=customer.id,
-                    auto_advance=False,  # No Auto-finalizar la factura
-                )
+            logo_url = request.build_absolute_uri(settings.MEDIA_URL + "logo/logo.png")
 
-                finalized_invoice = stripe.Invoice.finalize_invoice(invoice.id)
-                email_message = f"Your appointment has been successfully booked. You can view and download your invoice here: {finalized_invoice.invoice_pdf}"
-                send_mail(
-                    "Appointment Confirmation",
-                    email_message,
-                    settings.EMAIL_HOST_USER,
-                    [customer_email],
-                    fail_silently=False,
-                )
-            except stripe.error.StripeError as e:
+            # Generar el contenido HTML para la factura
+            html_string = render_to_string(
+                "invoice_email.html",
+                {
+                    "appointment": appointment,
+                    "invoice": invoice,
+                    "logo_url": logo_url,
+                },
+            )
+
+            # Convertir HTML a PDF usando xhtml2pdf
+            pdf_file = BytesIO()
+            pisa_status = pisa.CreatePDF(
+                BytesIO(html_string.encode("utf-8")), dest=pdf_file
+            )
+
+            if pisa_status.err:
                 return Response(
-                    {"error": "Stripe error: " + str(e)},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {"error": "Error generating PDF"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+
+            # Preparar el correo electrónico con la factura adjunta en PDF
+            subject = "Appointment Confirmation"
+            body = (
+                f"Your appointment for the service '{appointment.service.name}' "
+                f"on {appointment.schedule.date}, {appointment.schedule.start_time} has been confirmed. "
+                "Please find attached the invoice."
+                "\nThank you for choosing us!"
+                "\nFisioterAppIA Clinic,"
+            )
+            email = EmailMessage(
+                subject,
+                body,
+                settings.EMAIL_HOST_USER,
+                [session.get("customer_details").get("email")],
+            )
+            email.attach(
+                f"invoice_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
+            )
+            email.send()
 
             return Response(
-                {"success": "Appointment created successfully"},
+                {"success": "Appointment and invoice created successfully"},
                 status=status.HTTP_200_OK,
             )
         else:

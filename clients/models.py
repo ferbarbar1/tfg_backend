@@ -55,12 +55,6 @@ class Rating(models.Model):
     client = models.ForeignKey(
         Client, on_delete=models.CASCADE, related_name="client_ratings"
     )
-    # worker = models.ForeignKey(
-    #     Worker, on_delete=models.CASCADE, related_name="worker_ratings", null=True
-    # )
-    # service = models.ForeignKey(
-    #     Service, on_delete=models.CASCADE, related_name="service_ratings"
-    # )
     appointment = models.ForeignKey(
         Appointment, on_delete=models.CASCADE, related_name="appointment_ratings"
     )

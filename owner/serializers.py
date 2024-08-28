@@ -29,6 +29,9 @@ class OfferSerializer(serializers.ModelSerializer):
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
+    service_name = serializers.ReadOnlyField()
+    amount = serializers.ReadOnlyField()
+
     class Meta:
         model = Invoice
-        fields = "__all__"
+        fields = ["id", "appointment", "created_at", "service_name", "amount"]

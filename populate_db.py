@@ -3,11 +3,11 @@ import shutil
 import sqlite3
 from datetime import time, date, datetime, timedelta
 from django.core.files import File
+import django
+import random
+from faker import Faker
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
-
-import django
-
 django.setup()
 
 from django.core.management import call_command
@@ -16,12 +16,12 @@ from workers.models import Schedule
 from clients.models import Appointment
 from owner.models import Service
 from clients.models import Rating
-import random
+
+fake = Faker()
 
 
 def remove_pycache_and_clean_migrations(root_path, modules):
     for module in modules:
-        # Ruta del módulo
         module_path = os.path.join(root_path, module)
         print(f"Revisando módulo: {module}")
         pycache_found = False
@@ -71,10 +71,6 @@ def clean_db():
         cur.execute("DELETE FROM sqlite_sequence")
         conn.commit()
 
-        # Reiniciar los IDs de las tablas a 1
-        cur.execute("DELETE FROM sqlite_sequence")
-        conn.commit()
-
         cur.close()
         conn.close()
     except Exception as e:
@@ -82,15 +78,11 @@ def clean_db():
 
 
 def run_migrations():
-    # Ejecuta 'makemigrations' para todas las aplicaciones
     call_command("makemigrations")
-
-    # Ejecuta 'migrate' para aplicar las migraciones
     call_command("migrate")
 
 
 def create_users():
-    # Crear propietario
     if not CustomUser.objects.filter(email="owner@example.com").exists():
         owner_user = CustomUser.objects.create_user(
             "owner",
@@ -103,7 +95,7 @@ def create_users():
         Owner.objects.create(user=owner_user)
         owner_user.get_role = "owner"
         owner_user.save()
-    # Crear superusuario
+
     if not CustomUser.objects.filter(email="superuser@example.com").exists():
         super_user = CustomUser.objects.create_superuser(
             "superuser",
@@ -115,40 +107,41 @@ def create_users():
         )
         super_user.get_role = "superuser"
         super_user.save()
-    # Crear varios trabajadores y clientes
+
     worker_images = ["worker0.png", "worker1.jpg", "worker2.png"]
-    for i in range(3):
+    for i in range(5):
         if not CustomUser.objects.filter(email=f"worker{i}@example.com").exists():
             worker_user = CustomUser.objects.create_user(
                 f"worker{i}",
                 f"worker{i}@example.com",
                 "workerpass",
-                first_name=f"Worker{i}",
-                last_name="User",
-                date_of_birth=date(1990, i + 1, i + 10),
+                first_name=fake.first_name(),
+                last_name=fake.last_name(),
+                date_of_birth=fake.date_of_birth(minimum_age=20, maximum_age=60),
             )
-            worker_image_path = f"media/profile_images/{worker_images[i]}"
+            worker_image_path = f"media/profile_images/{random.choice(worker_images)}"
             with open(worker_image_path, "rb") as img_file:
-                worker_user.image.save(worker_images[i], File(img_file), save=True)
+                worker_user.image.save(
+                    worker_images[i % len(worker_images)], File(img_file), save=True
+                )
             Worker.objects.create(
                 user=worker_user,
-                specialty="Especialidad de ejemplo",
-                experience=1,
+                specialty=fake.job(),
+                experience=random.randint(1, 20),
             )
             worker_user.get_role = "worker"
             worker_user.save()
+
         if not CustomUser.objects.filter(email=f"client{i}@example.com").exists():
             client_user = CustomUser.objects.create_user(
                 f"client{i}",
                 f"client{i}@example.com",
                 "clientpass",
-                first_name=f"Client{i}",
-                last_name="User",
-                date_of_birth=date(1995, i + 2, i + 5),
+                first_name=fake.first_name(),
+                last_name=fake.last_name(),
+                date_of_birth=fake.date_of_birth(minimum_age=18, maximum_age=80),
             )
-            Client.objects.create(
-                user=client_user,
-            )
+            Client.objects.create(user=client_user)
             client_user.get_role = "client"
             client_user.save()
     print("Usuarios creados con éxito")
@@ -165,13 +158,17 @@ def create_schedules():
     ]
     start_times_afternoon = [time(17, 0), time(18, 0), time(19, 0)]
 
-    # Fecha de inicio para los horarios
-    start_date = date.today()
+    today = date.today()
+    past_days_offsets = [-60, -30, -2, -1]
+    future_days_offsets = [0, 1, 2]
 
     for worker in workers:
-        for day in range(5):  # 0 = Lunes, 1 = Martes, ..., 4 = Viernes
-            # Calcula la fecha del horario
-            schedule_date = start_date + timedelta(days=day)
+        for offset in past_days_offsets + future_days_offsets:
+            schedule_date = today + timedelta(days=offset)
+            # Saltar fines de semana
+            if schedule_date.weekday() >= 5:
+                continue
+
             for start_time in start_times_morning + start_times_afternoon:
                 end_time = (
                     datetime.combine(schedule_date, start_time) + timedelta(hours=1)
@@ -190,46 +187,31 @@ def create_services():
     workers = list(Worker.objects.all())
     services = [
         {
-            "name": "Servicio de ejemplo 1",
-            "description": "Descripción de ejemplo 1",
-            "price": 100.00,
-            "image": "servicio1.png",
-        },
-        {
-            "name": "Servicio de ejemplo 2",
-            "description": "Descripción de ejemplo 2",
-            "price": 200.00,
-            "image": "servicio2.jpg",
-        },
-        {
-            "name": "Servicio de ejemplo 3",
-            "description": "Descripción de ejemplo 3",
-            "price": 300.00,
-            "image": "servicio3.jpg",
-        },
+            "name": fake.catch_phrase(),
+            "description": fake.text(max_nb_chars=200),
+            "price": round(random.uniform(50.0, 500.0), 2),
+            "image": f"servicio{random.randint(1, 3)}.jpg",
+        }
+        for _ in range(4)
     ]
 
     for service in services:
         with open(f"media/service_images/{service['image']}", "rb") as img_file:
-            service = Service.objects.create(
+            service_obj = Service.objects.create(
                 name=service["name"],
                 description=service["description"],
                 price=service["price"],
                 image=File(img_file, name=service["image"]),
             )
-        num_workers = random.randint(1, 2)  # Número aleatorio de trabajadores: 1 o 2
-        random_workers = random.sample(
-            workers, num_workers
-        )  # Selecciona especialistas aleatorios
+        num_workers = random.randint(1, 3)
+        random_workers = random.sample(workers, num_workers)
         for worker in random_workers:
-            service.workers.add(worker)
+            service_obj.workers.add(worker)
 
     print("Servicios creados con éxito")
 
 
 def find_eligible_worker(service_id):
-    # Esta es una simplificación. Deberías implementar tu lógica aquí para
-    # encontrar un trabajador que ofrezca el servicio y cumpla con las condiciones.
     workers_offering_service = Service.objects.get(id=service_id).workers.filter(
         schedules__available=True
     )
@@ -246,6 +228,9 @@ def create_appointments():
         print("No hay servicios disponibles.")
         return
 
+    today = date.today()
+    days_offsets = [-60, -30, -2, -1, 0, 1, 2]  # Días pasados, hoy y días futuros
+
     for i, client in enumerate(clients):
         chosen_service = random.choice(services)
         eligible_worker = find_eligible_worker(chosen_service.id)
@@ -256,58 +241,59 @@ def create_appointments():
             )
             continue
 
-        # Asumiendo que cada trabajador tiene al menos un horario disponible
-        chosen_schedule = Schedule.objects.filter(
-            worker=eligible_worker, available=True
-        ).first()
-        if not chosen_schedule:
-            print(
-                f"No hay horarios disponibles para el trabajador {eligible_worker.user.email}."
-            )
-            continue
+        for offset in days_offsets:
+            appointment_date = today + timedelta(days=offset)
+            # Saltar fines de semana
+            if appointment_date.weekday() >= 5:
+                continue
 
-        appointment = Appointment(
-            client=client,
-            worker=eligible_worker,
-            schedule=chosen_schedule,
-            service=chosen_service,
-            description="Cita de ejemplo",
-            modality="VIRTUAL" if i % 2 == 0 else "IN_PERSON",
-        )
-        appointment.save()
-        chosen_schedule.available = False
-        chosen_schedule.save()
+            chosen_schedule = Schedule.objects.filter(
+                worker=eligible_worker, available=True, date=appointment_date
+            ).first()
+            if not chosen_schedule:
+                print(
+                    f"No hay horarios disponibles para el trabajador {eligible_worker.user.username} en la fecha {appointment_date}."
+                )
+                continue
+
+            status = "COMPLETED" if offset < 0 else "CONFIRMED"
+
+            appointment = Appointment(
+                client=client,
+                worker=eligible_worker,
+                schedule=chosen_schedule,
+                service=chosen_service,
+                description=fake.text(max_nb_chars=200),
+                modality="VIRTUAL" if i % 2 == 0 else "IN_PERSON",
+                status=status,
+            )
+            appointment.save()
+            chosen_schedule.available = False
+            chosen_schedule.save()
 
     print("Citas creadas con éxito.")
 
 
 def create_ratings():
-    # Obtén los primeros dos citas
-    appointments = Appointment.objects.all()[:2]
+    completed_appointments = Appointment.objects.filter(status="COMPLETED")
+    num_appointments = len(completed_appointments)
 
-    # Crea dos calificaciones
-    for i in range(2):
+    for i in range(num_appointments):
         Rating.objects.create(
-            appointment=appointments[i],
-            client=appointments[i].client,
-            rate=i + 3,  # Puntuaciones de 3 y 4
-            opinion=f"Opinión {i+1}",
-            date=datetime.now(),  # Añade la fecha y hora actual
+            appointment=completed_appointments[i],
+            client=completed_appointments[i].client,
+            rate=random.randint(1, 5),
+            opinion=fake.text(max_nb_chars=200),
+            date=datetime.now(),
         )
 
     print("Calificaciones creadas con éxito")
 
 
-def run_server():
-    call_command("runserver")
-
-
 def populate_db():
     print("Limpiando archivos de migraciones y __pycache__... Por favor espera")
-    # Ruta de la carpeta actual donde se encuentra el script
     root_path = "."
-    # Lista de módulos a limpiar
-    modules = ["authentication", "clients", "owner", "workers"]
+    modules = ["authentication", "clients", "owner", "workers", "chat"]
     remove_pycache_and_clean_migrations(root_path, modules)
     print("Limpiando la base de datos... Por favor espera")
     clean_db()

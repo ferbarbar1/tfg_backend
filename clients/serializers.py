@@ -163,6 +163,7 @@ class RatingSerializer(serializers.ModelSerializer):
     client_id = serializers.PrimaryKeyRelatedField(
         queryset=Client.objects.all(), write_only=True, source="client"
     )
+    appointment = AppointmentSerializer(read_only=True)
 
     class Meta:
         model = Rating

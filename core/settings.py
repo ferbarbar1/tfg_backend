@@ -65,6 +65,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -76,6 +77,11 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://tfgfrontend-production.up.railway.app",
+]
+
+CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "https://tfgfrontend-production.up.railway.app",
 ]

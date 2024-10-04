@@ -9,9 +9,11 @@ class AppointmentFilter(filters.FilterSet):
 
 
 class RatingFilter(filters.FilterSet):
+    client_id = filters.NumberFilter(field_name="client__id")
+
     class Meta:
         model = Rating
-        fields = ["appointment", "client"]
+        fields = ["appointment", "client_id"]
 
 
 class MedicalHistoryFilter(filters.FilterSet):

@@ -2,9 +2,9 @@ from django.db import models
 from django.db import models
 from authentication.models import Worker
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
-# Create your models here.
 class Service(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, max_length=255)
@@ -15,17 +15,24 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
-    def get_active_offer(self):
-        active_offer = self.offers.filter(
+    def get_active_offers(self):
+        active_offers = self.offers.filter(
             start_date__lte=timezone.now(), end_date__gte=timezone.now()
-        ).first()
-        return active_offer
+        )
+        return active_offers
 
     def get_discounted_price(self):
-        offer = self.get_active_offer()
-        if offer:
-            return self.price * (1 - offer.discount / 100)
-        return self.price
+        offers = self.get_active_offers()
+        discounted_price = self.price
+        for offer in offers:
+            discounted_price *= 1 - offer.discount / 100
+        return discounted_price
+
+    def clean(self):
+        if self.price <= 0:
+            raise ValidationError("The price must be greater than zero.")
+        if not self.name.strip():
+            raise ValidationError("The name cannot be empty.")
 
 
 class Offer(models.Model):
@@ -38,6 +45,16 @@ class Offer(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.start_date >= self.end_date:
+            raise ValidationError("The start date must be before the end date.")
+        if self.start_date <= timezone.now():
+            raise ValidationError(
+                "The start date must be after the current date and time."
+            )
+        if not (0 <= self.discount <= 100):
+            raise ValidationError("The discount must be between 0 and 100.")
 
 
 class Invoice(models.Model):
@@ -60,3 +77,9 @@ class Invoice(models.Model):
     @property
     def amount(self):
         return self.appointment.service.price
+
+    def clean(self):
+        if not self.appointment:
+            raise ValidationError("The associated appointment must exist and be valid.")
+        if self.amount <= 0:
+            raise ValidationError("The amount must be greater than zero.")

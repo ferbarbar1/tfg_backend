@@ -11,7 +11,8 @@ from io import BytesIO
 from owner.models import Service, Invoice
 from .serializers import AppointmentSerializer
 from django.template.loader import render_to_string
-
+from .models import Appointment
+from chat.models import Notification
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -54,6 +55,23 @@ class CreateCheckoutSessionView(APIView):
                     "modality": modality,
                 },
             )
+
+            # Crear la cita y almacenar el ID de la sesión de Stripe
+            appointment_data = {
+                "client_id": client_id,
+                "service_id": service_id,
+                "schedule_id": schedule_id,
+                "description": description,
+                "status": "CONFIRMED",
+                "modality": modality,
+                "stripe_session_id": checkout_session.id,
+            }
+            serializer = AppointmentSerializer(data=appointment_data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                print(serializer.errors)
+
             return Response(
                 {"sessionId": checkout_session.id}, status=status.HTTP_200_OK
             )
@@ -136,6 +154,7 @@ def webhook(request):
             "description": metadata["description"],
             "status": "CONFIRMED",
             "modality": metadata["modality"],
+            "stripe_session_id": session.id,
         }
 
         serializer = AppointmentSerializer(data=appointment_data)
@@ -170,13 +189,13 @@ def webhook(request):
                 )
 
             # Preparar el correo electrónico con la factura adjunta en PDF
-            subject = "Appointment Confirmation"
+            subject = "Confirmación de Cita"
             body = (
-                f"Your appointment for the service '{appointment.service.name}' "
-                f"on {appointment.schedule.date}, {appointment.schedule.start_time} has been confirmed. "
-                "Please find attached the invoice."
-                "\nThank you for choosing us!"
-                "\nFisioterAppIA Clinic,"
+                f"Su cita para el servicio '{appointment.service.name}' "
+                f"el {appointment.schedule.date}, {appointment.schedule.start_time} ha sido confirmada. "
+                "Adjunto encontrará la factura."
+                "\n¡Gracias por elegirnos!"
+                "\nClínica FisioterAppIA,"
             )
             email = EmailMessage(
                 subject,
@@ -185,17 +204,84 @@ def webhook(request):
                 [session.get("customer_details").get("email")],
             )
             email.attach(
-                f"invoice_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
+                f"factura_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
             )
             email.send()
 
             return Response(
-                {"success": "Appointment and invoice created successfully"},
+                {"success": "Cita y factura creadas exitosamente"},
                 status=status.HTTP_200_OK,
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
-        {"message": "Event type not handled"}, status=status.HTTP_202_ACCEPTED
+        {"message": "Tipo de evento no manejado"}, status=status.HTTP_202_ACCEPTED
     )
+
+
+class CancelAppointmentView(APIView):
+    def post(self, request, *args, **kwargs):
+        appointment_id = request.data.get("appointment_id")
+        user = request.user
+
+        # Obtener la cita
+        appointment = get_object_or_404(Appointment, id=appointment_id)
+
+        # Procesar la devolución de dinero utilizando la API de Stripe
+        try:
+            # Obtener el ID de la sesión de pago de Stripe desde la metadata de la cita
+            stripe_session_id = appointment.stripe_session_id
+            if not stripe_session_id:
+                return Response(
+                    {
+                        "error": "No se encontró el ID de la sesión de Stripe para esta cita"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Obtener la sesión de pago de Stripe
+            session = stripe.checkout.Session.retrieve(stripe_session_id)
+
+            # Crear la devolución de dinero
+            refund = stripe.Refund.create(payment_intent=session.payment_intent)
+
+            # Actualizar el estado de la cita a "CANCELLED"
+            appointment.status = "CANCELLED"
+            appointment.save()
+
+            worker = appointment.worker.user
+            Notification.objects.create(
+                user=worker,
+                message=f"La cita del cliente {appointment.client.user.username} para el servicio '{appointment.service.name}' "
+                f"con fecha {appointment.schedule.date}, {appointment.schedule.start_time} ha sido cancelada.",
+            )
+
+            # Enviar una notificación por correo electrónico al usuario
+            subject = "Cancelación de Cita"
+            body = (
+                f"Su cita para el servicio '{appointment.service.name}' "
+                f"el {appointment.schedule.date}, {appointment.schedule.start_time} ha sido cancelada. "
+                "El reembolso ha sido procesado exitosamente."
+                "\n¡Gracias por elegirnos!"
+                "\nClínica FisioterAppIA,"
+            )
+            email = EmailMessage(
+                subject,
+                body,
+                settings.EMAIL_HOST_USER,
+                [appointment.client.user.email],
+            )
+            email.send()
+
+            return Response(
+                {"success": "Cita cancelada y reembolso procesado exitosamente"},
+                status=status.HTTP_200_OK,
+            )
+        except stripe.error.StripeError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"error": "Ocurrió un error inesperado"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

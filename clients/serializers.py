@@ -10,6 +10,7 @@ from datetime import timedelta
 from authentication.serializers import WorkerSerializer, ClientSerializer
 from workers.serializers import ScheduleSerializer, InformSerializer
 from owner.serializers import ServiceSerializer
+from datetime import timedelta, datetime
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -46,15 +47,51 @@ class AppointmentSerializer(serializers.ModelSerializer):
     inform_id = serializers.PrimaryKeyRelatedField(
         write_only=True, queryset=Inform.objects.all(), source="inform", required=False
     )
+    stripe_session_id = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
 
     class Meta:
         model = Appointment
         fields = "__all__"
 
+    def validate_status(self, value):
+        if value not in dict(Appointment.STATUS_CHOICES):
+            raise serializers.ValidationError("Invalid status")
+        return value
+
+    def validate_modality(self, value):
+        if value not in dict(Appointment.MODALITY_CHOICES):
+            raise serializers.ValidationError("Invalid modality")
+        return value
+
     def validate(self, attrs):
         schedule = attrs.get("schedule")
-        if schedule and not schedule.available:
-            raise serializers.ValidationError("This schedule is not available.")
+        if schedule:
+            if schedule.date < datetime.now().date():
+                raise serializers.ValidationError(
+                    "The appointment date must be in the future."
+                )
+            if (
+                schedule.date == datetime.now().date()
+                and schedule.start_time < (datetime.now() + timedelta(hours=24)).time()
+            ):
+                raise serializers.ValidationError(
+                    "Appointments must be booked at least 24 hours in advance."
+                )
+            if not schedule.available:
+                raise serializers.ValidationError("This schedule is not available.")
+        status = attrs.get("status")
+        inform = attrs.get("inform")
+        if inform and status != "CONFIRMED":
+            raise serializers.ValidationError(
+                "An inform can only be attached if the appointment is confirmed."
+            )
+        if status == "COMPLETED" and not inform:
+            raise serializers.ValidationError(
+                "An appointment can only be marked as completed if an inform is attached."
+            )
+
         return attrs
 
     @transaction.atomic
@@ -174,6 +211,10 @@ class RatingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Rate must be between 1 and 5")
         if not data["opinion"]:
             raise serializers.ValidationError("Opinion is required")
+        if data["date"].date() <= data["appointment"].schedule.date:
+            raise serializers.ValidationError(
+                "The rating date must be after the appointment date."
+            )
         return data
 
 

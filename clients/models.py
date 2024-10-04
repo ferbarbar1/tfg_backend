@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from authentication.models import Client, Worker
 from owner.models import Service
 from workers.models import Inform
@@ -46,9 +47,25 @@ class Appointment(models.Model):
         blank=True,
         related_name="appointment_inform",
     )
+    # Campo para devolver el dinero en caso de cancelación
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True)
     # Campos para las videollamadas
     client_peer_id = models.CharField(max_length=100, blank=True, null=True)
     worker_peer_id = models.CharField(max_length=100, blank=True, null=True)
+
+    def clean(self):
+        if self.inform and self.status != "CONFIRMED":
+            raise ValidationError(
+                "An inform can only be attached if the appointment is confirmed."
+            )
+        if self.status == "COMPLETED" and not self.inform:
+            raise ValidationError(
+                "An appointment can only be marked as completed if an inform is attached."
+            )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class Rating(models.Model):
@@ -61,6 +78,17 @@ class Rating(models.Model):
     rate = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     opinion = models.CharField(max_length=255)
     date = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if self.date and self.appointment.schedule.date:
+            if self.date.date() <= self.appointment.schedule.date:
+                raise ValidationError(
+                    "The rating date must be after the appointment date."
+                )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class MedicalHistory(models.Model):

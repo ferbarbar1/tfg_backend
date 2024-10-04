@@ -1,5 +1,7 @@
 from django.db import models
 from authentication.models import Worker, CustomUser
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 # Create your models here.
@@ -14,6 +16,12 @@ class Schedule(models.Model):
 
     def __str__(self):
         return f"{self.date} : {self.start_time} - {self.end_time}"
+
+    def clean(self):
+        if self.start_time >= self.end_time:
+            raise ValidationError("The start time must be before the end time.")
+        if self.date < timezone.now().date():
+            raise ValidationError("The date cannot be in the past.")
 
 
 class Inform(models.Model):
@@ -45,3 +53,9 @@ class Resource(models.Model):
 
     def __str__(self):
         return self.title
+
+    def clean(self):
+        if self.resource_type == "FILE" and not self.file:
+            raise ValidationError("A file must be provided for resource type 'FILE'.")
+        if self.resource_type == "URL" and not self.url:
+            raise ValidationError("A URL must be provided for resource type 'URL'.")

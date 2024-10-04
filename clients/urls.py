@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework import routers
-from .views import CreateCheckoutSessionView, webhook
+from .views import CreateCheckoutSessionView, webhook, CancelAppointmentView
 from .api import AppointmentViewSet, RatingViewSet, MedicalHistoryViewSet
 
 router = routers.DefaultRouter()
@@ -16,6 +16,11 @@ urlpatterns = [
         name="create-checkout-session",
     ),
     path("api/webhook/", webhook, name="webhook"),
+    path(
+        "api/appointments/cancel/",
+        CancelAppointmentView.as_view(),
+        name="cancel-appointment",
+    ),
 ]
 
 urlpatterns += router.urls

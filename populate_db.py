@@ -6,16 +6,17 @@ from django.core.files import File
 import django
 import random
 from faker import Faker
+from django.utils import timezone
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
 from django.core.management import call_command
 from authentication.models import CustomUser, Owner, Client, Worker
-from workers.models import Schedule
-from clients.models import Appointment
-from owner.models import Service
-from clients.models import Rating
+from workers.models import Schedule, Inform, Resource
+from clients.models import Appointment, Rating, MedicalHistory
+from owner.models import Service, Offer, Invoice
+from chat.models import Conversation, Message, Notification
 
 fake = Faker()
 
@@ -211,6 +212,33 @@ def create_services():
     print("Servicios creados con éxito")
 
 
+def create_offers():
+    services = Service.objects.all()
+
+    offers = [
+        {
+            "name": f"Oferta {i+1}",
+            "description": fake.text(max_nb_chars=200),
+            "discount": round(random.uniform(5.0, 50.0), 2),
+            "start_date": timezone.make_aware(
+                fake.date_time_between(start_date="-30d", end_date="now")
+            ),
+            "end_date": timezone.make_aware(
+                fake.date_time_between(start_date="now", end_date="+30d")
+            ),
+        }
+        for i in range(3)
+    ]
+
+    for offer_data in offers:
+        offer = Offer.objects.create(**offer_data)
+        num_services = random.randint(1, len(services))
+        random_services = random.sample(list(services), num_services)
+        offer.services.add(*random_services)
+
+    print("Ofertas creadas con éxito")
+
+
 def find_eligible_worker(service_id):
     workers_offering_service = Service.objects.get(id=service_id).workers.filter(
         schedules__available=True
@@ -252,61 +280,110 @@ def create_appointments():
             ).first()
             if not chosen_schedule:
                 print(
-                    f"No hay horarios disponibles para el trabajador {eligible_worker.user.username} en la fecha {appointment_date}."
+                    f"No se encontró un horario disponible para el trabajador {eligible_worker.user.first_name} el {appointment_date}."
                 )
                 continue
 
-            status = "COMPLETED" if offset < 0 else "CONFIRMED"
-
-            appointment = Appointment(
+            appointment = Appointment.objects.create(
                 client=client,
                 worker=eligible_worker,
-                schedule=chosen_schedule,
                 service=chosen_service,
-                description=fake.text(max_nb_chars=200),
-                modality="VIRTUAL" if i % 2 == 0 else "IN_PERSON",
-                status=status,
+                schedule=chosen_schedule,
+                description=fake.text(max_nb_chars=100),
+                status=random.choice(["CONFIRMED", "COMPLETED"]),
+                modality=random.choice(["VIRTUAL", "IN_PERSON"]),
             )
-            appointment.save()
             chosen_schedule.available = False
             chosen_schedule.save()
 
-    print("Citas creadas con éxito.")
+            # Crear informe y asignarlo a la cita
+            inform = Inform.objects.create(
+                relevant_information=fake.text(max_nb_chars=100),
+                diagnostic=fake.text(max_nb_chars=100),
+                treatment=fake.text(max_nb_chars=100),
+            )
+            appointment.inform = inform
+            appointment.save()
+
+            # Crear factura y asignarla a la cita
+            Invoice.objects.create(appointment=appointment)
+
+            # Crear valoración
+            Rating.objects.create(
+                client=client,
+                appointment=appointment,
+                rate=random.randint(1, 5),
+                opinion=fake.text(max_nb_chars=100),
+            )
+
+            # Crear historial médico
+            MedicalHistory.objects.create(
+                client=client,
+                title=fake.word(),
+                description=fake.text(max_nb_chars=200),
+            )
+
+    print(
+        "Citas, informes, facturas, valoraciones e historiales médicos creados con éxito."
+    )
 
 
-def create_ratings():
-    completed_appointments = Appointment.objects.filter(status="COMPLETED")
-    num_appointments = len(completed_appointments)
-
-    for i in range(num_appointments):
-        Rating.objects.create(
-            appointment=completed_appointments[i],
-            client=completed_appointments[i].client,
-            rate=random.randint(1, 5),
-            opinion=fake.text(max_nb_chars=200),
-            date=datetime.now(),
+def create_resources():
+    authors = CustomUser.objects.all()
+    for i in range(10):
+        Resource.objects.create(
+            author=random.choice(authors),
+            title=fake.catch_phrase(),
+            description=fake.text(max_nb_chars=200),
+            resource_type=random.choice(["FILE", "URL"]),
+            url=fake.url(),
         )
+    print("Recursos creados con éxito")
 
-    print("Calificaciones creadas con éxito")
+
+def create_conversations_and_messages():
+    users = list(CustomUser.objects.all())
+    for _ in range(5):
+        participants = random.sample(users, 2)
+        conversation = Conversation.objects.create()
+        conversation.participants.set(participants)
+
+        for _ in range(3):
+            sender = random.choice(participants)
+            message = Message.objects.create(
+                conversation=conversation,
+                sender=sender,
+                content=fake.text(max_nb_chars=200),
+                timestamp=fake.date_time_this_year(),
+            )
+
+    print("Conversaciones y mensajes creados con éxito")
 
 
-def populate_db():
-    print("Limpiando archivos de migraciones y __pycache__... Por favor espera")
-    root_path = "."
-    modules = ["authentication", "clients", "owner", "workers", "chat"]
-    remove_pycache_and_clean_migrations(root_path, modules)
-    print("Limpiando la base de datos... Por favor espera")
-    clean_db()
-    print("Ejecutando migraciones... Por favor espera")
-    run_migrations()
-    print("Poblando la base de datos... Por favor espera")
-    create_users()
-    create_schedules()
-    create_services()
-    create_appointments()
-    create_ratings()
-    print("Población completa!")
+def create_notifications():
+    users = CustomUser.objects.all()
+    for user in users:
+        Notification.objects.create(
+            user=user,
+            message=f"Tienes un recordatorio importante",
+            type="REMINDER",
+        )
+    print("Notificaciones creadas con éxito")
 
 
 if __name__ == "__main__":
-    populate_db()
+    root_path = "apps"
+    modules = ["authentication", "clients", "workers", "owner", "chat"]
+
+    remove_pycache_and_clean_migrations(root_path, modules)
+    clean_db()
+    run_migrations()
+    create_users()
+    create_schedules()
+    create_services()
+    create_offers()
+    create_appointments()
+    create_resources()
+    create_conversations_and_messages()
+    create_notifications()
+    print("Base de datos poblada con éxito.")

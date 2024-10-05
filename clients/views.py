@@ -13,6 +13,8 @@ from .serializers import AppointmentSerializer
 from django.template.loader import render_to_string
 from .models import Appointment
 from chat.models import Notification
+from datetime import datetime
+from workers.models import Schedule
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -27,6 +29,14 @@ class CreateCheckoutSessionView(APIView):
         modality = request.data.get("modality")
 
         service = get_object_or_404(Service, id=service_id)
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+
+        # Validar que la fecha del appointment no sea pasada
+        if schedule.date < datetime.now().date():
+            return Response(
+                {"error": "The appointment date must be in the future."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Ver si hay una oferta activa para el servicio
         discounted_price = service.get_discounted_price()

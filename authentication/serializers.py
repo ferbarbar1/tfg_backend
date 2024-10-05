@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import CustomUser, Owner, Client, Worker
+from django.utils import timezone
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -18,6 +19,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "role",
             "image",
             "date_of_birth",
+            "date_joined",
         ]
 
     def create(self, validated_data):
@@ -26,6 +28,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         return obj.get_role()
+
+    def validate_date_of_birth(self, value):
+        if value > timezone.now().date():
+            raise serializers.ValidationError(
+                "The date of birth cannot be in the future."
+            )
+        return value
 
 
 class OwnerSerializer(serializers.ModelSerializer):

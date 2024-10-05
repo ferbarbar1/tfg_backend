@@ -68,7 +68,7 @@ class Invoice(models.Model):
 
     @property
     def client_email(self):
-        return self.appointment.client.email
+        return self.appointment.client.user.email
 
     @property
     def service_name(self):

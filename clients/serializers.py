@@ -81,16 +81,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 )
             if not schedule.available:
                 raise serializers.ValidationError("This schedule is not available.")
-        status = attrs.get("status")
-        inform = attrs.get("inform")
-        if inform and status != "CONFIRMED":
-            raise serializers.ValidationError(
-                "An inform can only be attached if the appointment is confirmed."
-            )
-        if status == "COMPLETED" and not inform:
-            raise serializers.ValidationError(
-                "An appointment can only be marked as completed if an inform is attached."
-            )
 
         return attrs
 
@@ -98,6 +88,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         service = validated_data.get("service")
         schedule = validated_data.get("schedule")
+        if not service:
+            raise serializers.ValidationError("Service is required.")
         try:
             worker = self.find_eligible_worker(service.id, schedule.date)
         except ObjectDoesNotExist:
@@ -201,20 +193,28 @@ class RatingSerializer(serializers.ModelSerializer):
         queryset=Client.objects.all(), write_only=True, source="client"
     )
     appointment = AppointmentSerializer(read_only=True)
+    appointment_id = serializers.PrimaryKeyRelatedField(
+        queryset=Appointment.objects.all(), write_only=True, source="appointment"
+    )
 
     class Meta:
         model = Rating
-        fields = ["id", "client", "client_id", "rate", "opinion", "date", "appointment"]
+        fields = [
+            "id",
+            "client",
+            "client_id",
+            "rate",
+            "opinion",
+            "date",
+            "appointment",
+            "appointment_id",
+        ]
 
     def validate(self, data):
         if data["rate"] < 1 or data["rate"] > 5:
             raise serializers.ValidationError("Rate must be between 1 and 5")
         if not data["opinion"]:
             raise serializers.ValidationError("Opinion is required")
-        if data["date"].date() <= data["appointment"].schedule.date:
-            raise serializers.ValidationError(
-                "The rating date must be after the appointment date."
-            )
         return data
 
 

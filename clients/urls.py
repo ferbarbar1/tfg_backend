@@ -1,6 +1,11 @@
 from django.urls import path
 from rest_framework import routers
-from .views import CreateCheckoutSessionView, webhook, CancelAppointmentView
+from .views import (
+    CreateCheckoutSessionView,
+    webhook,
+    CancelAppointmentView,
+    CreateAppointmentByOwnerView,
+)
 from .api import AppointmentViewSet, RatingViewSet, MedicalHistoryViewSet
 
 router = routers.DefaultRouter()
@@ -20,6 +25,11 @@ urlpatterns = [
         "api/appointments/cancel/",
         CancelAppointmentView.as_view(),
         name="cancel-appointment",
+    ),
+    path(
+        "api/create-appointment-by-owner/",
+        CreateAppointmentByOwnerView.as_view(),
+        name="create-appointment-by-owner",
     ),
 ]
 

@@ -96,6 +96,34 @@ class CreateCheckoutSessionView(APIView):
             )
 
 
+class CreateAppointmentByOwnerView(APIView):
+    def post(self, request, *args, **kwargs):
+        service_id = request.data.get("service_id")
+        client_id = request.data.get("client_id")
+        schedule_id = request.data.get("schedule_id")
+        description = request.data.get("description", "")
+        modality = request.data.get("modality")
+
+        appointment_data = {
+            "client_id": client_id,
+            "service_id": service_id,
+            "schedule_id": schedule_id,
+            "description": description,
+            "status": "CONFIRMED",
+            "modality": modality,
+        }
+
+        serializer = AppointmentSerializer(data=appointment_data)
+        if serializer.is_valid():
+            appointment = serializer.save()
+            return Response(
+                {"success": "Appointment created successfully"},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class CreateAppointmentView(APIView):
     def post(self, request, *args, **kwargs):
         service_id = request.data.get("service_id")

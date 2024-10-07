@@ -5,17 +5,17 @@ from rest_framework import viewsets, permissions
 
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ServiceSerializer
 
 
 class OfferViewSet(viewsets.ModelViewSet):
     queryset = Offer.objects.all()
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = OfferSerializer
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all()
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = InvoiceSerializer

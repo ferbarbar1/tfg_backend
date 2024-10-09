@@ -31,7 +31,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     # Campos para escritura
     schedule_id = serializers.PrimaryKeyRelatedField(
         write_only=True,
-        queryset=Schedule.objects.filter(available=True),
+        queryset=Schedule.objects.all(),
         source="schedule",
         required=False,
     )
@@ -79,8 +79,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Appointments must be booked at least 24 hours in advance."
                 )
-            if not schedule.available:
-                raise serializers.ValidationError("This schedule is not available.")
 
         return attrs
 

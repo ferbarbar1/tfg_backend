@@ -195,64 +195,75 @@ def webhook(request):
             "stripe_session_id": session.id,
         }
 
-        serializer = AppointmentSerializer(data=appointment_data)
-        if serializer.is_valid():
-            appointment = serializer.save()
-
-            # Crear la factura asociada a la cita
-            invoice = Invoice.objects.create(appointment=appointment)
-
-            logo_url = request.build_absolute_uri(settings.MEDIA_URL + "logo/logo.png")
-
-            # Generar el contenido HTML para la factura
-            html_string = render_to_string(
-                "invoice_email.html",
-                {
-                    "appointment": appointment,
-                    "invoice": invoice,
-                    "logo_url": logo_url,
-                },
-            )
-
-            # Convertir HTML a PDF usando xhtml2pdf
-            pdf_file = BytesIO()
-            pisa_status = pisa.CreatePDF(
-                BytesIO(html_string.encode("utf-8")), dest=pdf_file
-            )
-
-            if pisa_status.err:
-                return Response(
-                    {"error": "Error generating PDF"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-            # Preparar el correo electrónico con la factura adjunta en PDF
-            subject = "Confirmación de Cita"
-            body = (
-                f"Su cita para el servicio '{appointment.service.name}' "
-                f"el {appointment.schedule.date}, {appointment.schedule.start_time} ha sido confirmada. "
-                "Encontrará adjunta la factura."
-                "\n\n¡Gracias por elegirnos! "
-                "\nFisioterAppIA Clinic"
-            )
-            email = EmailMessage(
-                subject,
-                body,
-                settings.EMAIL_HOST_USER,
-                [session.get("customer_details").get("email")],
-            )
-            email.attach(
-                f"invoice_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
-            )
-
-            email.send()
-
+        # Verificar si el schedule_id existe
+        try:
+            schedule = Schedule.objects.get(id=appointment_data["schedule_id"])
+        except Schedule.DoesNotExist:
             return Response(
-                {"success": "Appointment and invoice created successfully"},
-                status=status.HTTP_200_OK,
+                {
+                    "error": f"Schedule with id {appointment_data['schedule_id']} does not exist."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        else:
+
+        serializer = AppointmentSerializer(data=appointment_data)
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        appointment = serializer.save()
+
+        # Crear la factura asociada a la cita
+        invoice = Invoice.objects.create(appointment=appointment)
+
+        logo_url = request.build_absolute_uri(settings.MEDIA_URL + "logo/logo.png")
+
+        # Generar el contenido HTML para la factura
+        html_string = render_to_string(
+            "invoice_email.html",
+            {
+                "appointment": appointment,
+                "invoice": invoice,
+                "logo_url": logo_url,
+            },
+        )
+
+        # Convertir HTML a PDF usando xhtml2pdf
+        pdf_file = BytesIO()
+        pisa_status = pisa.CreatePDF(
+            BytesIO(html_string.encode("utf-8")), dest=pdf_file
+        )
+
+        if pisa_status.err:
+            return Response(
+                {"error": "Error generating PDF"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Preparar el correo electrónico con la factura adjunta en PDF
+        subject = "Confirmación de Cita"
+        body = (
+            f"Su cita para el servicio '{appointment.service.name}' "
+            f"el {appointment.schedule.date}, {appointment.schedule.start_time} ha sido confirmada. "
+            "Encontrará adjunta la factura."
+            "\n\n¡Gracias por elegirnos! "
+            "\nFisioterAppIA Clinic"
+        )
+        email = EmailMessage(
+            subject,
+            body,
+            settings.EMAIL_HOST_USER,
+            [session.get("customer_details").get("email")],
+        )
+        email.attach(
+            f"invoice_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
+        )
+
+        email.send()
+
+        return Response(
+            {"success": "Appointment and invoice created successfully"},
+            status=status.HTTP_200_OK,
+        )
 
     return Response(
         {"message": "Event type not handled"}, status=status.HTTP_202_ACCEPTED

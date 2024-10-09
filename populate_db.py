@@ -1,12 +1,12 @@
+from datetime import time, date, datetime, timedelta
+from django.core.files import File
+from faker import Faker
+from django.utils import timezone
 import os
 import shutil
 import sqlite3
-from datetime import time, date, datetime, timedelta
-from django.core.files import File
-import django
 import random
-from faker import Faker
-from django.utils import timezone
+import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
@@ -110,7 +110,7 @@ def create_users():
         super_user.save()
 
     worker_images = ["worker0.png", "worker1.jpg", "worker2.png"]
-    for i in range(5):
+    for i in range(3):  # Crear solo 3 trabajadores
         if not CustomUser.objects.filter(email=f"worker{i}@example.com").exists():
             worker_user = CustomUser.objects.create_user(
                 f"worker{i}",
@@ -133,6 +133,7 @@ def create_users():
             worker_user.get_role = "worker"
             worker_user.save()
 
+    for i in range(3):  # Crear solo 3 clientes
         if not CustomUser.objects.filter(email=f"client{i}@example.com").exists():
             client_user = CustomUser.objects.create_user(
                 f"client{i}",
@@ -160,11 +161,10 @@ def create_schedules():
     start_times_afternoon = [time(17, 0), time(18, 0), time(19, 0)]
 
     today = date.today()
-    past_days_offsets = [-60, -30, -2, -1]
-    future_days_offsets = [0, 1, 2]
+    days_offsets = list(range(-15, 15))
 
     for worker in workers:
-        for offset in past_days_offsets + future_days_offsets:
+        for offset in days_offsets:
             schedule_date = today + timedelta(days=offset)
             # Saltar fines de semana
             if schedule_date.weekday() >= 5:
@@ -188,12 +188,23 @@ def create_services():
     workers = list(Worker.objects.all())
     services = [
         {
-            "name": fake.catch_phrase(),
-            "description": fake.text(max_nb_chars=200),
-            "price": round(random.uniform(50.0, 500.0), 2),
-            "image": f"servicio{random.randint(1, 3)}.jpg",
-        }
-        for _ in range(4)
+            "name": "Rehabilitación de lesiones",
+            "description": "Sesión de fisioterapia para rehabilitación y recuperación de lesiones.",
+            "price": round(random.uniform(40.0, 80.0), 2),
+            "image": "rehabilitacion.jpg",
+        },
+        {
+            "name": "Evaluación inicial de fisioterapia",
+            "description": "Evaluación inicial de fisioterapia para determinar el tratamiento adecuado.",
+            "price": round(random.uniform(30.0, 60.0), 2),
+            "image": "consulta_virtual.jpeg",
+        },
+        {
+            "name": "Pilates terapéutico",
+            "description": "Clase de pilates terapéutico para mejorar la postura y fortalecer el cuerpo.",
+            "price": round(random.uniform(40.0, 90.0), 2),
+            "image": "pilates.jpeg",
+        },
     ]
 
     for service in services:
@@ -217,24 +228,29 @@ def create_offers():
 
     offers = [
         {
-            "name": f"Oferta {i+1}",
-            "description": fake.text(max_nb_chars=200),
-            "discount": round(random.uniform(5.0, 50.0), 2),
+            "name": "Oferta",
+            "description": f"Obtén un {random.randint(10, 30)}% de descuento en {service.name}.",
+            "discount": round(random.uniform(10.0, 30.0), 2),
             "start_date": timezone.make_aware(
                 fake.date_time_between(start_date="-30d", end_date="now")
             ),
             "end_date": timezone.make_aware(
                 fake.date_time_between(start_date="now", end_date="+30d")
             ),
+            "service": service,
         }
-        for i in range(3)
+        for service in services
     ]
 
     for offer_data in offers:
-        offer = Offer.objects.create(**offer_data)
-        num_services = random.randint(1, len(services))
-        random_services = random.sample(list(services), num_services)
-        offer.services.add(*random_services)
+        offer = Offer.objects.create(
+            name=offer_data["name"],
+            description=offer_data["description"],
+            discount=offer_data["discount"],
+            start_date=offer_data["start_date"],
+            end_date=offer_data["end_date"],
+        )
+        offer.services.add(offer_data["service"])
 
     print("Ofertas creadas con éxito")
 
@@ -257,7 +273,7 @@ def create_appointments():
         return
 
     today = date.today()
-    days_offsets = [-60, -30, -2, -1, 0, 1, 2]  # Días pasados, hoy y días futuros
+    days_offsets = list(range(-15, 15))  # 15 días en el pasado y 15 días en el futuro
 
     for i, client in enumerate(clients):
         chosen_service = random.choice(services)
@@ -278,11 +294,19 @@ def create_appointments():
             chosen_schedule = Schedule.objects.filter(
                 worker=eligible_worker, available=True, date=appointment_date
             ).first()
+
+            # Si no se encuentra un horario disponible en la fecha específica, no crear la cita
             if not chosen_schedule:
                 print(
                     f"No se encontró un horario disponible para el trabajador {eligible_worker.user.first_name} el {appointment_date}."
                 )
                 continue
+
+            # Determinar el estado de la cita
+            if offset < 0:
+                status = random.choice(["COMPLETED", "CANCELLED"])
+            else:
+                status = "CONFIRMED"
 
             appointment = Appointment.objects.create(
                 client=client,
@@ -290,37 +314,39 @@ def create_appointments():
                 service=chosen_service,
                 schedule=chosen_schedule,
                 description=fake.text(max_nb_chars=100),
-                status=random.choice(["CONFIRMED", "COMPLETED"]),
+                status=status,
                 modality=random.choice(["VIRTUAL", "IN_PERSON"]),
             )
             chosen_schedule.available = False
             chosen_schedule.save()
 
-            # Crear informe y asignarlo a la cita
-            inform = Inform.objects.create(
-                relevant_information=fake.text(max_nb_chars=100),
-                diagnostic=fake.text(max_nb_chars=100),
-                treatment=fake.text(max_nb_chars=100),
-            )
-            appointment.inform = inform
-            appointment.save()
+            if status == "COMPLETED":
+                # Crear informe y asignarlo a la cita
+                inform = Inform.objects.create(
+                    relevant_information=fake.text(max_nb_chars=100),
+                    diagnostic=fake.text(max_nb_chars=100),
+                    treatment=fake.text(max_nb_chars=100),
+                )
+                appointment.inform = inform
+                appointment.save()
 
             # Crear factura y asignarla a la cita
             Invoice.objects.create(appointment=appointment)
 
-            # Crear valoración
-            Rating.objects.create(
-                client=client,
-                appointment=appointment,
-                rate=random.randint(1, 5),
-                opinion=fake.text(max_nb_chars=100),
-            )
+            # Crear valoración solo para una fracción de las citas completadas
+            if status == "COMPLETED" and random.random() < 0.3:  # 30% de probabilidad
+                Rating.objects.create(
+                    client=client,
+                    appointment=appointment,
+                    rate=random.randint(1, 5),
+                    opinion=fake.text(max_nb_chars=100),
+                )
 
             # Crear historial médico
             MedicalHistory.objects.create(
                 client=client,
-                title=fake.word(),
-                description=fake.text(max_nb_chars=200),
+                title=f"Historial de {chosen_service.name}",
+                description=f"Paciente con {fake.word()} tratado con {chosen_service.name}.",
             )
 
     print(
@@ -329,15 +355,47 @@ def create_appointments():
 
 
 def create_resources():
-    authors = CustomUser.objects.all()
-    for i in range(10):
-        Resource.objects.create(
-            author=random.choice(authors),
-            title=fake.catch_phrase(),
-            description=fake.text(max_nb_chars=200),
-            resource_type=random.choice(["FILE", "URL"]),
-            url=fake.url(),
+    workers = Worker.objects.all()
+    resource_images = ["lumbares.jpg", "hombro.jpg", "alimentacion.jpeg"]
+    resources = [
+        {
+            "title": "Ejercicios para el dolor lumbar",
+            "description": "Una guía completa de ejercicios para aliviar el dolor lumbar.",
+            "resource_type": "FILE",
+            "url": "https://www.comunidad.madrid/hospital/infantasofia/sites/infantasofia/files/inline-files/columna%20lumbar.pdf",
+        },
+        {
+            "title": "Ejercicios terapéuticos para mejorar la movilidad del hombro",
+            "description": "Una serie de ejercicios para mejorar la movilidad del hombro.",
+            "resource_type": "URL",
+            "url": "https://youtu.be/bFWrgXEJ3rQ?si=QBLacq87LjnDJjDK",
+        },
+        {
+            "title": "Guía de alimentación saludable",
+            "description": "Una guía de alimentación saludable para mejorar tu bienestar.",
+            "resource_type": "FILE",
+            "url": "https://www.euskadi.eus/contenidos/informacion/alim_sal_material/es_def/adjuntos/guia_alim_saldudable_castellano.pdf",
+        },
+    ]
+
+    # Asegúrate de que hay suficientes imágenes para los recursos
+    if len(resource_images) < len(resources):
+        raise ValueError("No hay suficientes imágenes para los recursos.")
+
+    for i, resource in enumerate(resources):
+        resource_obj = Resource.objects.create(
+            author=random.choice(workers).user,
+            title=resource["title"],
+            description=resource["description"],
+            resource_type=resource["resource_type"],
+            url=resource["url"],
         )
+        resource_image_path = f"media/resources_images/{resource_images[i]}"
+        with open(resource_image_path, "rb") as img_file:
+            resource_obj.image_preview.save(
+                os.path.basename(resource_image_path), File(img_file), save=True
+            )
+
     print("Recursos creados con éxito")
 
 
@@ -361,7 +419,7 @@ def create_conversations_and_messages():
 
 
 def create_notifications():
-    users = CustomUser.objects.all()
+    users = CustomUser.objects.exclude(owner__isnull=False)
     for user in users:
         Notification.objects.create(
             user=user,
@@ -369,6 +427,21 @@ def create_notifications():
             type="REMINDER",
         )
     print("Notificaciones creadas con éxito")
+
+
+def create_past_appointment_notifications():
+    past_appointments = Appointment.objects.filter(
+        schedule__date__lt=timezone.now().date(), status="COMPLETED"
+    )
+
+    for appointment in past_appointments:
+        Notification.objects.create(
+            user=appointment.client.user,
+            message=f"Recordatorio de tu cita para {appointment.service} el {appointment.schedule.date} a las {appointment.schedule.start_time}",
+            type=Notification.REMINDER,
+        )
+
+    print("Notificaciones de citas pasadas creadas con éxito")
 
 
 if __name__ == "__main__":
@@ -386,4 +459,5 @@ if __name__ == "__main__":
     create_resources()
     create_conversations_and_messages()
     create_notifications()
+    create_past_appointment_notifications()
     print("Base de datos poblada con éxito.")

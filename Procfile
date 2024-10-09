@@ -1,1 +1,0 @@
-web: python populate_railway_db.py && gunicorn core.wsgi

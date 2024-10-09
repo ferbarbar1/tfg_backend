@@ -186,7 +186,7 @@ REST_FRAMEWORK = {
 STRIPE_PUBLIC_KEY = "pk_test_51PFdYTGzZooPGUyPyarTnl6RMGFS0Zkll6iKQcpYRK0sICx2lokA4BEXIoxm1j4n1OmvkOP48mYaTaGBpsPfzs5Y0012QYjWvu"
 STRIPE_SECRET_KEY = "sk_test_51PFdYTGzZooPGUyPHktEqWtQFsTCuA7E2jEczM1tGd5A2YThlAc506gxr0bEdlFjjd33M4gjSdlwrkRUCMzKaTJo00K22vfhDk"
 STRIPE_WEBHOOK_SECRET = (
-    "whsec_d06fb4ec31116b0dca70cd584f1a552e90dfe85d205cc44aea9b45ed006b86a44"
+    "whsec_d06fb4ec31116b0dca70cd584f1a552e90dfe85d205cc44aea9b45ed006b86a4"
 )
 
 # Configuración de correo electrónico

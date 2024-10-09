@@ -67,13 +67,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = ["id", "appointment", "created_at", "service_name", "amount"]
 
-    def validate_appointment(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                "The associated appointment must exist and be valid."
-            )
-        return value
-
     def validate_amount(self, value):
         if value <= 0:
             raise serializers.ValidationError("The amount must be greater than zero.")

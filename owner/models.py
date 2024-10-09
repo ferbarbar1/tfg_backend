@@ -79,7 +79,5 @@ class Invoice(models.Model):
         return self.appointment.service.price
 
     def clean(self):
-        if not self.appointment:
-            raise ValidationError("The associated appointment must exist and be valid.")
         if self.amount <= 0:
             raise ValidationError("The amount must be greater than zero.")

@@ -231,9 +231,9 @@ def webhook(request):
             body = (
                 f"Su cita para el servicio '{appointment.service.name}' "
                 f"el {appointment.schedule.date}, {appointment.schedule.start_time} ha sido confirmada. "
-                "Adjunto encontrará la factura."
-                "\n¡Gracias por elegirnos!"
-                "\nClínica FisioterAppIA,"
+                "Encontrará adjunta la factura."
+                "\n\n¡Gracias por elegirnos! "
+                "\nFisioterAppIA Clinic"
             )
             email = EmailMessage(
                 subject,
@@ -242,19 +242,20 @@ def webhook(request):
                 [session.get("customer_details").get("email")],
             )
             email.attach(
-                f"factura_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
+                f"invoice_{invoice.id}.pdf", pdf_file.getvalue(), "application/pdf"
             )
+
             email.send()
 
             return Response(
-                {"success": "Cita y factura creadas exitosamente"},
+                {"success": "Appointment and invoice created successfully"},
                 status=status.HTTP_200_OK,
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(
-        {"message": "Tipo de evento no manejado"}, status=status.HTTP_202_ACCEPTED
+        {"message": "Event type not handled"}, status=status.HTTP_202_ACCEPTED
     )
 
 
@@ -302,7 +303,8 @@ class CancelAppointmentView(APIView):
                 f"el {appointment.schedule.date}, {appointment.schedule.start_time} ha sido cancelada. "
                 "El reembolso ha sido procesado exitosamente."
                 "\n¡Gracias por elegirnos!"
-                "\nClínica FisioterAppIA,"
+                "\n"
+                "\nFisioterAppIA Clinic"
             )
             email = EmailMessage(
                 subject,

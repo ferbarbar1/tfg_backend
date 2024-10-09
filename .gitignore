@@ -63,7 +63,7 @@ local_settings.py
 *.pyc
 __pycache__/
 db.sqlite3
-media/
+#media/
 static/
 
 # Flask stuff:
@@ -101,3 +101,8 @@ ENV/
 
 # mkdocs documentation
 /site
+
+# Ignorar archivos de estado de Celery Beat
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+celerybeat-schedule.dir

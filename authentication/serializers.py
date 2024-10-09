@@ -1,16 +1,40 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import CustomUser, Owner, Client, Worker
+from django.utils import timezone
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "password", "first_name", "last_name", "email"]
+        fields = [
+            "id",
+            "username",
+            "password",
+            "first_name",
+            "last_name",
+            "email",
+            "role",
+            "image",
+            "date_of_birth",
+            "date_joined",
+        ]
 
     def create(self, validated_data):
         user = get_user_model().objects.create_user(**validated_data)
         return user
+
+    def get_role(self, obj):
+        return obj.get_role()
+
+    def validate_date_of_birth(self, value):
+        if value > timezone.now().date():
+            raise serializers.ValidationError(
+                "The date of birth cannot be in the future."
+            )
+        return value
 
 
 class OwnerSerializer(serializers.ModelSerializer):
@@ -36,6 +60,11 @@ class OwnerSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
+        user.date_of_birth = user_data.get("date_of_birth", user.date_of_birth)
+
+        if "image" in user_data:
+            user.image = user_data.get("image")
+
         user.save()
 
         return instance
@@ -46,7 +75,7 @@ class WorkerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Worker
-        fields = ["id", "user", "salary", "specialty"]
+        fields = ["id", "user", "specialty", "experience"]
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
@@ -64,11 +93,16 @@ class WorkerSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
+        user.date_of_birth = user_data.get("date_of_birth", user.date_of_birth)
+
+        if "image" in user_data:
+            user.image = user_data["image"]
+
         user.save()
 
         # Actualiza los campos del trabajador
-        instance.salary = validated_data.get("salary", instance.salary)
         instance.specialty = validated_data.get("specialty", instance.specialty)
+        instance.experience = validated_data.get("experience", instance.experience)
         instance.save()
 
         return instance
@@ -79,7 +113,7 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ["id", "user", "subscription_plan"]
+        fields = ["id", "user"]
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
@@ -97,12 +131,11 @@ class ClientSerializer(serializers.ModelSerializer):
         user.first_name = user_data.get("first_name", user.first_name)
         user.last_name = user_data.get("last_name", user.last_name)
         user.email = user_data.get("email", user.email)
-        user.save()
+        user.date_of_birth = user_data.get("date_of_birth", user.date_of_birth)
 
-        # Actualiza los campos del cliente
-        instance.subscription_plan = validated_data.get(
-            "subscription_plan", instance.subscription_plan
-        )
-        instance.save()
+        if "image" in user_data:
+            user.image = user_data["image"]
+
+        user.save()
 
         return instance

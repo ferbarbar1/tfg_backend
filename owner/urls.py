@@ -1,19 +1,10 @@
 from rest_framework import routers
-from django.urls import path
-from .api import AppointmentViewSet, ServiceViewSet
-from .views import CreateAppointmentView
+from .api import ServiceViewSet, OfferViewSet, InvoiceViewSet
 
 router = routers.DefaultRouter()
 
-router.register("api/appointments", AppointmentViewSet, "appointments")
 router.register("api/services", ServiceViewSet, "services")
+router.register("api/offers", OfferViewSet, "offers")
+router.register("api/invoices", InvoiceViewSet, "invoices")
 
-urlpatterns = [
-    path(
-        "api/appointments/create",
-        CreateAppointmentView.as_view(),
-        name="create_appointment",
-    ),
-]
-
-urlpatterns += router.urls
+urlpatterns = router.urls

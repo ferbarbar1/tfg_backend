@@ -1,16 +1,21 @@
-from workers.models import Appointment
-from .models import Service
-from .serializers import AppointmentSerializer, ServiceSerializer
+from .models import Service, Offer, Invoice
+from .serializers import ServiceSerializer, OfferSerializer, InvoiceSerializer
 from rest_framework import viewsets, permissions
-
-
-class AppointmentViewSet(viewsets.ModelViewSet):
-    queryset = Appointment.objects.all()
-    permission_classes = [permissions.AllowAny]
-    serializer_class = AppointmentSerializer
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ServiceSerializer
+
+
+class OfferViewSet(viewsets.ModelViewSet):
+    queryset = Offer.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OfferSerializer
+
+
+class InvoiceViewSet(viewsets.ModelViewSet):
+    queryset = Invoice.objects.all()
+    permission_classes = [permissions.AllowAny]
+    serializer_class = InvoiceSerializer
